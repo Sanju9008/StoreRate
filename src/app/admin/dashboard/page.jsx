@@ -1,8 +1,9 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, Suspense } from 'react';
+import { useSearchParams } from 'next/navigation';
 import ProtectedRoute from '@/components/common/ProtectedRoute';
-import Navbar from '@/components/common/Navbar';
+import Layout from '@/components/common/Layout';
 import StatCard from '@/components/ui/StatCard';
 import SortableHeader from '@/components/ui/SortableHeader';
 import AddUserModal from '@/components/admin/AddUserModal';
@@ -11,9 +12,10 @@ import { useAuth } from '@/context/AuthContext';
 import { Users, Store, Star, Plus, Search, Loader2 } from 'lucide-react';
 import Alert from '@/components/ui/Alert';
 
-export default function AdminDashboard() {
+function AdminDashboardContent() {
     const { token } = useAuth();
-    const [activeTab, setActiveTab] = useState('stores');
+    const searchParams = useSearchParams();
+    const activeTab = searchParams.get('tab') || 'dashboard';
     
     // Modals
     const [isUserModalOpen, setIsUserModalOpen] = useState(false);
@@ -44,7 +46,12 @@ export default function AdminDashboard() {
     useEffect(() => {
         if (token) {
             if (activeTab === 'stores') fetchStores();
-            else fetchUsers();
+            else if (activeTab === 'users') fetchUsers();
+            else {
+                // Dashboard view relies on metrics, but let's clear loading state 
+                // since fetchMetrics runs independently.
+                setLoading(false);
+            }
         }
     }, [activeTab, token, storeSearch, storeSort, userSearch, userRole, userSort]);
 
@@ -91,7 +98,7 @@ export default function AdminDashboard() {
 
     const roleBadgeColor = (r) => {
         if (r === 'SYSTEM_ADMIN') return 'bg-indigo-100 text-indigo-800 border-indigo-200';
-        if (r === 'STORE_OWNER') return 'bg-emerald-100 text-emerald-800 border-emerald-200';
+        if (r === 'STORE_OWNER') return 'bg-[#FEF3C7] text-[#D97706] border-[#FDE68A]';
         return 'bg-slate-100 text-slate-800 border-slate-200';
     };
 
@@ -100,164 +107,195 @@ export default function AdminDashboard() {
         if (r === 'STORE_OWNER') return 'Store Owner';
         return 'User';
     };
+    
+    const displayTitle = activeTab === 'dashboard' ? 'Dashboard Overview' : 
+                         activeTab === 'stores' ? 'Stores Management' : 
+                         'Users Management';
 
     return (
-        <ProtectedRoute allowedRoles={['SYSTEM_ADMIN']}>
-            <div className="min-h-screen bg-gray-50">
-                <Navbar />
-                
-                <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-                    {alertMsg.text && <Alert type={alertMsg.type} message={alertMsg.text} />}
+        <Layout title={displayTitle}>
+            <div className="bg-[#F8FAFC] min-h-[calc(100vh-64px)] font-sans">
+                <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+                    {alertMsg.text && <div className="mb-6"><Alert type={alertMsg.type} message={alertMsg.text} /></div>}
                     
-                    <div className="flex justify-between items-center mb-8">
-                        <h1 className="text-2xl font-bold text-gray-900">System Dashboard</h1>
-                        <div className="flex gap-3">
-                            <button onClick={() => setIsUserModalOpen(true)} className="flex items-center px-4 py-2 bg-white border border-gray-300 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50 shadow-sm">
-                                <Plus className="w-4 h-4 mr-2" /> Add New User
-                            </button>
-                            <button onClick={() => setIsStoreModalOpen(true)} className="flex items-center px-4 py-2 bg-blue-600 rounded-lg text-sm font-medium text-white hover:bg-blue-700 shadow-sm">
-                                <Plus className="w-4 h-4 mr-2" /> Add New Store
-                            </button>
+                    {/* View 1: Dashboard */}
+                    {activeTab === 'dashboard' && (
+                        <div className="space-y-8">
+                            <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4">
+                                <h1 className="text-2xl font-bold text-[#0F172A] tracking-tight">Dashboard Overview</h1>
+                            </div>
+                            
+                            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                                <StatCard title="Total Users" value={metrics.totalUsers} icon={Users} colorClass="bg-blue-100 text-[#2563EB]" />
+                                <StatCard title="Total Stores" value={metrics.totalStores} icon={Store} colorClass="bg-purple-100 text-purple-600" />
+                                <StatCard title="Total Ratings" value={metrics.totalRatings} icon={Star} colorClass="bg-[#FEF3C7] text-[#D97706]" />
+                            </div>
+                            
+                            <div className="bg-white rounded-2xl p-8 shadow-sm border border-[#E2E8F0]">
+                                <h2 className="text-lg font-bold text-[#0F172A] mb-2">Platform Activity</h2>
+                                <p className="text-[#64748B] text-sm">Welcome to the StoreRate admin console. Select Stores or Users from the sidebar to manage platform data.</p>
+                            </div>
                         </div>
-                    </div>
-
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-                        <StatCard title="Total Users" value={metrics.totalUsers} icon={Users} colorClass="bg-blue-100 text-blue-600" />
-                        <StatCard title="Total Stores" value={metrics.totalStores} icon={Store} colorClass="bg-purple-100 text-purple-600" />
-                        <StatCard title="Total Ratings" value={metrics.totalRatings} icon={Star} colorClass="bg-yellow-100 text-yellow-600" />
-                    </div>
-
-                    <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
-                        <div className="border-b border-gray-200">
-                            <nav className="flex -mb-px px-6">
-                                <button onClick={() => setActiveTab('stores')} className={`whitespace-nowrap py-4 px-4 border-b-2 font-medium text-sm ${activeTab === 'stores' ? 'border-blue-500 text-blue-600' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'}`}>
-                                    Stores Management
+                    )}
+                    
+                    {/* View 2: Stores Management */}
+                    {activeTab === 'stores' && (
+                        <div className="space-y-6">
+                            <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4 border-b border-slate-200/80 pb-6">
+                                <h1 className="text-2xl font-bold text-[#0F172A] tracking-tight">Stores Management</h1>
+                                <button onClick={() => setIsStoreModalOpen(true)} className="flex items-center justify-center px-4 py-2 bg-[#2563EB] hover:bg-[#1D4ED8] rounded-xl text-sm font-medium text-white shadow-sm shadow-blue-500/20 transition-all active:scale-95">
+                                    <Plus className="w-4 h-4 mr-2" /> Add New Store
                                 </button>
-                                <button onClick={() => setActiveTab('users')} className={`whitespace-nowrap py-4 px-4 border-b-2 font-medium text-sm ${activeTab === 'users' ? 'border-blue-500 text-blue-600' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'}`}>
-                                    Users Management
+                            </div>
+                            
+                            <div className="relative w-full max-w-md">
+                                <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 w-4 h-4" />
+                                <input 
+                                    type="text" 
+                                    placeholder="Search stores by name or address..." 
+                                    value={storeSearch}
+                                    onChange={(e) => setStoreSearch(e.target.value)}
+                                    className="w-full pl-10 pr-4 py-2.5 bg-white border border-[#CBD5E1] rounded-xl text-sm text-[#0F172A] placeholder-[#94A3B8] shadow-sm focus:border-[#2563EB] focus:ring-2 focus:ring-[#2563EB]/10 outline-none transition-all"
+                                />
+                            </div>
+
+                            <div className="bg-white rounded-2xl shadow-sm border border-[#E2E8F0] overflow-hidden">
+                                <div className="overflow-x-auto">
+                                    <table className="w-full table-auto divide-y divide-[#E2E8F0]">
+                                        <thead className="bg-[#F8FAFC]">
+                                            <tr>
+                                                <SortableHeader label="Store Name" columnKey="name" currentSort={storeSort.key} currentOrder={storeSort.order} onSort={handleSortStores} />
+                                                <SortableHeader label="Email" columnKey="email" currentSort={storeSort.key} currentOrder={storeSort.order} onSort={handleSortStores} />
+                                                <SortableHeader label="Address" columnKey="address" currentSort={storeSort.key} currentOrder={storeSort.order} onSort={handleSortStores} />
+                                                <th className="px-5 py-4 text-left text-xs font-bold text-[#64748B] uppercase tracking-wider">Owner</th>
+                                                <SortableHeader label="Overall Rating" columnKey="rating" currentSort={storeSort.key} currentOrder={storeSort.order} onSort={handleSortStores} />
+                                                <SortableHeader label="Created Date" columnKey="created_at" currentSort={storeSort.key} currentOrder={storeSort.order} onSort={handleSortStores} />
+                                            </tr>
+                                        </thead>
+                                        <tbody className="bg-white divide-y divide-[#E2E8F0]">
+                                            {loading ? (
+                                                <tr><td colSpan="6" className="px-6 py-12 text-center text-[#64748B]"><Loader2 className="w-8 h-8 animate-spin mx-auto mb-2 text-[#2563EB]"/> Fetching stores...</td></tr>
+                                            ) : stores.length === 0 ? (
+                                                <tr>
+                                                    <td colSpan="6" className="px-6 py-12 text-center text-[#94A3B8]">
+                                                        <Store className="w-8 h-8 mx-auto mb-3 text-[#CBD5E1]" />
+                                                        No stores found matching your query.
+                                                    </td>
+                                                </tr>
+                                            ) : stores.map(store => (
+                                                <tr key={store.id} className="hover:bg-[#F8FAFC] transition-colors">
+                                                    <td className="px-5 py-4 whitespace-nowrap text-sm font-semibold text-[#0F172A]">{store.name}</td>
+                                                    <td className="px-5 py-4 whitespace-nowrap text-sm text-[#64748B]">{store.email}</td>
+                                                    <td className="px-5 py-4 text-sm text-[#64748B] max-w-xs truncate">{store.address}</td>
+                                                    <td className="px-5 py-4 whitespace-nowrap text-sm text-[#64748B]">{store.ownerName || <span className="text-gray-400 italic">Unassigned</span>}</td>
+                                                    <td className="px-5 py-4 whitespace-nowrap text-sm font-bold text-[#D97706]">★ {Number(store.overallRating).toFixed(1)}</td>
+                                                    <td className="px-5 py-4 whitespace-nowrap text-sm text-[#64748B] font-medium">{new Date(store.created_at).toLocaleDateString()}</td>
+                                                </tr>
+                                            ))}
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+                    )}
+                    
+                    {/* View 3: Users Management */}
+                    {activeTab === 'users' && (
+                        <div className="space-y-6">
+                            <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4 border-b border-slate-200/80 pb-6">
+                                <h1 className="text-2xl font-bold text-[#0F172A] tracking-tight">Users Management</h1>
+                                <button onClick={() => setIsUserModalOpen(true)} className="flex items-center justify-center px-4 py-2 bg-white border border-[#CBD5E1] rounded-xl text-sm font-medium text-[#0F172A] hover:bg-slate-50 shadow-sm transition-colors">
+                                    <Plus className="w-4 h-4 mr-2" /> Add New User
                                 </button>
-                            </nav>
-                        </div>
-
-                        <div className="p-6">
-                            {activeTab === 'stores' && (
-                                <div className="space-y-4">
-                                    <div className="flex gap-4">
-                                        <div className="relative flex-1 max-w-md">
-                                            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
-                                            <input 
-                                                type="text" 
-                                                placeholder="Search stores..." 
-                                                value={storeSearch}
-                                                onChange={(e) => setStoreSearch(e.target.value)}
-                                                className="pl-9 pr-4 py-2 w-full border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                                            />
-                                        </div>
-                                    </div>
-
-                                    <div className="overflow-x-auto border border-gray-100 rounded-xl overflow-hidden">
-                                        <table className="w-full divide-y divide-gray-200">
-                                            <thead className="bg-gray-50">
-                                                <tr>
-                                                    <SortableHeader label="Store Name" columnKey="name" currentSort={storeSort.key} currentOrder={storeSort.order} onSort={handleSortStores} />
-                                                    <SortableHeader label="Email" columnKey="email" currentSort={storeSort.key} currentOrder={storeSort.order} onSort={handleSortStores} />
-                                                    <SortableHeader label="Address" columnKey="address" currentSort={storeSort.key} currentOrder={storeSort.order} onSort={handleSortStores} />
-                                                    <th className="px-5 py-3.5 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Owner</th>
-                                                    <SortableHeader label="Overall Rating" columnKey="rating" currentSort={storeSort.key} currentOrder={storeSort.order} onSort={handleSortStores} />
-                                                    <SortableHeader label="Created Date" columnKey="created_at" currentSort={storeSort.key} currentOrder={storeSort.order} onSort={handleSortStores} />
-                                                </tr>
-                                            </thead>
-                                            <tbody className="bg-white divide-y divide-gray-200">
-                                                {loading ? (
-                                                    <tr><td colSpan="6" className="px-6 py-12 text-center text-gray-500"><Loader2 className="w-8 h-8 animate-spin mx-auto mb-2 text-blue-500"/> Fetching stores...</td></tr>
-                                                ) : stores.length === 0 ? (
-                                                    <tr><td colSpan="6" className="px-6 py-12 text-center text-gray-500">No stores found.</td></tr>
-                                                ) : stores.map(store => (
-                                                    <tr key={store.id} className="hover:bg-gray-50">
-                                                        <td className="px-5 py-3.5 whitespace-nowrap text-sm font-medium text-gray-900">{store.name}</td>
-                                                        <td className="px-5 py-3.5 whitespace-nowrap text-sm text-gray-500">{store.email}</td>
-                                                        <td className="px-5 py-3.5 text-sm text-gray-500 max-w-xs truncate">{store.address}</td>
-                                                        <td className="px-5 py-3.5 whitespace-nowrap text-sm text-gray-500">{store.ownerName || <span className="text-gray-400 italic">Unassigned</span>}</td>
-                                                        <td className="px-5 py-3.5 whitespace-nowrap text-sm font-semibold text-yellow-600">★ {Number(store.overallRating).toFixed(1)}</td>
-                                                        <td className="px-5 py-3.5 whitespace-nowrap text-sm text-gray-500">{new Date(store.created_at).toLocaleDateString()}</td>
-                                                    </tr>
-                                                ))}
-                                            </tbody>
-                                        </table>
-                                    </div>
+                            </div>
+                            
+                            <div className="flex flex-col sm:flex-row gap-4">
+                                <div className="relative flex-1 max-w-md">
+                                    <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 w-4 h-4" />
+                                    <input 
+                                        type="text" 
+                                        placeholder="Search users by name, email, or address..." 
+                                        value={userSearch}
+                                        onChange={(e) => setUserSearch(e.target.value)}
+                                        className="w-full pl-10 pr-4 py-2.5 bg-white border border-[#CBD5E1] rounded-xl text-sm text-[#0F172A] placeholder-[#94A3B8] shadow-sm focus:border-[#2563EB] focus:ring-2 focus:ring-[#2563EB]/10 outline-none transition-all"
+                                    />
                                 </div>
-                            )}
+                                <select 
+                                    value={userRole} 
+                                    onChange={(e) => setUserRole(e.target.value)}
+                                    className="bg-white border border-[#CBD5E1] rounded-xl px-4 py-2.5 text-sm text-[#0F172A] shadow-sm focus:border-[#2563EB] outline-none cursor-pointer w-full sm:w-auto"
+                                >
+                                    <option value="">All Roles</option>
+                                    <option value="SYSTEM_ADMIN">System Admin</option>
+                                    <option value="STORE_OWNER">Store Owner</option>
+                                    <option value="NORMAL_USER">Normal User</option>
+                                </select>
+                            </div>
 
-                            {activeTab === 'users' && (
-                                <div className="space-y-4">
-                                    <div className="flex gap-4">
-                                        <div className="relative flex-1 max-w-md">
-                                            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
-                                            <input 
-                                                type="text" 
-                                                placeholder="Search users..." 
-                                                value={userSearch}
-                                                onChange={(e) => setUserSearch(e.target.value)}
-                                                className="pl-9 pr-4 py-2 w-full border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                                            />
-                                        </div>
-                                        <select 
-                                            value={userRole} 
-                                            onChange={(e) => setUserRole(e.target.value)}
-                                            className="px-4 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white"
-                                        >
-                                            <option value="">All Roles</option>
-                                            <option value="SYSTEM_ADMIN">System Admin</option>
-                                            <option value="STORE_OWNER">Store Owner</option>
-                                            <option value="NORMAL_USER">Normal User</option>
-                                        </select>
-                                    </div>
-
-                                    <div className="overflow-x-auto border border-gray-100 rounded-xl overflow-hidden">
-                                        <table className="w-full divide-y divide-gray-200">
-                                            <thead className="bg-gray-50">
+                            <div className="bg-white rounded-2xl shadow-sm border border-[#E2E8F0] overflow-hidden">
+                                <div className="overflow-x-auto">
+                                    <table className="w-full table-auto divide-y divide-[#E2E8F0]">
+                                        <thead className="bg-[#F8FAFC]">
+                                            <tr>
+                                                <SortableHeader label="Name" columnKey="name" currentSort={userSort.key} currentOrder={userSort.order} onSort={handleSortUsers} />
+                                                <SortableHeader label="Email" columnKey="email" currentSort={userSort.key} currentOrder={userSort.order} onSort={handleSortUsers} />
+                                                <SortableHeader label="Address" columnKey="address" currentSort={userSort.key} currentOrder={userSort.order} onSort={handleSortUsers} />
+                                                <SortableHeader label="Role" columnKey="role" currentSort={userSort.key} currentOrder={userSort.order} onSort={handleSortUsers} />
+                                                <th className="px-5 py-4 text-left text-xs font-bold text-[#64748B] uppercase tracking-wider">Store Rating</th>
+                                                <SortableHeader label="Created Date" columnKey="created_at" currentSort={userSort.key} currentOrder={userSort.order} onSort={handleSortUsers} />
+                                            </tr>
+                                        </thead>
+                                        <tbody className="bg-white divide-y divide-[#E2E8F0]">
+                                            {loading ? (
+                                                <tr><td colSpan="6" className="px-6 py-12 text-center text-[#64748B]"><Loader2 className="w-8 h-8 animate-spin mx-auto mb-2 text-[#2563EB]"/> Fetching users...</td></tr>
+                                            ) : users.length === 0 ? (
                                                 <tr>
-                                                    <SortableHeader label="Name" columnKey="name" currentSort={userSort.key} currentOrder={userSort.order} onSort={handleSortUsers} />
-                                                    <SortableHeader label="Email" columnKey="email" currentSort={userSort.key} currentOrder={userSort.order} onSort={handleSortUsers} />
-                                                    <SortableHeader label="Address" columnKey="address" currentSort={userSort.key} currentOrder={userSort.order} onSort={handleSortUsers} />
-                                                    <SortableHeader label="Role" columnKey="role" currentSort={userSort.key} currentOrder={userSort.order} onSort={handleSortUsers} />
-                                                    <th className="px-5 py-3.5 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Store Rating</th>
-                                                    <SortableHeader label="Created Date" columnKey="created_at" currentSort={userSort.key} currentOrder={userSort.order} onSort={handleSortUsers} />
+                                                    <td colSpan="6" className="px-6 py-12 text-center text-[#94A3B8]">
+                                                        <Users className="w-8 h-8 mx-auto mb-3 text-[#CBD5E1]" />
+                                                        No users found matching your filters.
+                                                    </td>
                                                 </tr>
-                                            </thead>
-                                            <tbody className="bg-white divide-y divide-gray-200">
-                                                {loading ? (
-                                                    <tr><td colSpan="6" className="px-6 py-12 text-center text-gray-500"><Loader2 className="w-8 h-8 animate-spin mx-auto mb-2 text-blue-500"/> Fetching users...</td></tr>
-                                                ) : users.length === 0 ? (
-                                                    <tr><td colSpan="6" className="px-6 py-12 text-center text-gray-500">No users found.</td></tr>
-                                                ) : users.map(u => (
-                                                    <tr key={u.id} className="hover:bg-gray-50">
-                                                        <td className="px-5 py-3.5 whitespace-nowrap text-sm font-medium text-gray-900">{u.name}</td>
-                                                        <td className="px-5 py-3.5 whitespace-nowrap text-sm text-gray-500">{u.email}</td>
-                                                        <td className="px-5 py-3.5 text-sm text-gray-500 max-w-xs truncate">{u.address}</td>
-                                                        <td className="px-5 py-3.5 whitespace-nowrap">
-                                                            <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full border ${roleBadgeColor(u.role)}`}>
-                                                                {roleLabel(u.role)}
-                                                            </span>
-                                                        </td>
-                                                        <td className="px-5 py-3.5 whitespace-nowrap text-sm text-gray-500">
-                                                            {u.role === 'STORE_OWNER' ? `★ ${Number(u.storeRating).toFixed(1)}` : 'N/A'}
-                                                        </td>
-                                                        <td className="px-5 py-3.5 whitespace-nowrap text-sm text-gray-500">{new Date(u.created_at).toLocaleDateString()}</td>
-                                                    </tr>
-                                                ))}
-                                            </tbody>
-                                        </table>
-                                    </div>
+                                            ) : users.map(u => (
+                                                <tr key={u.id} className="hover:bg-[#F8FAFC] transition-colors">
+                                                    <td className="px-5 py-4 whitespace-nowrap text-sm font-semibold text-[#0F172A]">{u.name}</td>
+                                                    <td className="px-5 py-4 whitespace-nowrap text-sm text-[#64748B]">{u.email}</td>
+                                                    <td className="px-5 py-4 text-sm text-[#64748B] max-w-xs truncate">{u.address}</td>
+                                                    <td className="px-5 py-4 whitespace-nowrap">
+                                                        <span className={`px-2.5 py-1 inline-flex text-xs font-bold rounded-full border ${roleBadgeColor(u.role)}`}>
+                                                            {roleLabel(u.role)}
+                                                        </span>
+                                                    </td>
+                                                    <td className="px-5 py-4 whitespace-nowrap text-sm font-medium text-[#64748B]">
+                                                        {u.role === 'STORE_OWNER' ? <span className="text-[#D97706] font-bold">★ {Number(u.storeRating).toFixed(1)}</span> : 'N/A'}
+                                                    </td>
+                                                    <td className="px-5 py-4 whitespace-nowrap text-sm text-[#64748B] font-medium">{new Date(u.created_at).toLocaleDateString()}</td>
+                                                </tr>
+                                            ))}
+                                        </tbody>
+                                    </table>
                                 </div>
-                            )}
+                            </div>
                         </div>
-                    </div>
-                </main>
-
+                    )}
+                </div>
+                
                 <AddUserModal isOpen={isUserModalOpen} onClose={() => setIsUserModalOpen(false)} onSuccess={() => handleSuccess('User')} />
                 <AddStoreModal isOpen={isStoreModalOpen} onClose={() => setIsStoreModalOpen(false)} onSuccess={() => handleSuccess('Store')} />
             </div>
+        </Layout>
+    );
+}
+
+export default function AdminDashboard() {
+    return (
+        <ProtectedRoute allowedRoles={['SYSTEM_ADMIN']}>
+            <Suspense fallback={
+                <div className="min-h-screen flex items-center justify-center bg-[#F8FAFC]">
+                    <Loader2 className="w-10 h-10 animate-spin text-[#2563EB]" />
+                </div>
+            }>
+                <AdminDashboardContent />
+            </Suspense>
         </ProtectedRoute>
     );
 }

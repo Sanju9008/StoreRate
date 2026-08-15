@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { authorize } from '@/lib/middleware.js';
-import { getAdminStores, storeEmailExists, createStore } from '@/services/admin.service.js';
+import { getAdminStores, storeEmailExists, ownerHasStore, createStore } from '@/services/admin.service.js';
 import { validateEmail, validateAddress } from '@/lib/validators.js';
 import { v4 as uuidv4 } from 'uuid';
 
@@ -45,6 +45,10 @@ export async function POST(request) {
 
         if (await storeEmailExists(email)) {
             return NextResponse.json({ success: false, message: 'Store email already registered' }, { status: 409 });
+        }
+
+        if (ownerId && await ownerHasStore(ownerId)) {
+            return NextResponse.json({ success: false, message: 'This owner already has a store assigned. One owner can only manage one store.' }, { status: 409 });
         }
 
         const id = uuidv4();

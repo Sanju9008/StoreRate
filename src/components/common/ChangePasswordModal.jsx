@@ -88,20 +88,6 @@ export default function ChangePasswordModal({ isOpen, onClose }) {
                                 className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                                 required
                             />
-                            <div className="mt-2 text-xs text-gray-500 space-y-1">
-                                <p className={`flex items-center gap-1 ${hasLength ? 'text-green-600' : ''}`}>
-                                    {hasLength ? <CheckCircle2 className="h-3 w-3" /> : <div className="h-3 w-3 rounded-full border border-gray-300"></div>}
-                                    8 to 16 characters
-                                </p>
-                                <p className={`flex items-center gap-1 ${hasUpper ? 'text-green-600' : ''}`}>
-                                    {hasUpper ? <CheckCircle2 className="h-3 w-3" /> : <div className="h-3 w-3 rounded-full border border-gray-300"></div>}
-                                    One uppercase letter
-                                </p>
-                                <p className={`flex items-center gap-1 ${hasSpecial ? 'text-green-600' : ''}`}>
-                                    {hasSpecial ? <CheckCircle2 className="h-3 w-3" /> : <div className="h-3 w-3 rounded-full border border-gray-300"></div>}
-                                    One special character
-                                </p>
-                            </div>
                         </div>
 
                         <div>

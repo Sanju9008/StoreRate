@@ -52,7 +52,10 @@ export async function getUsers({ search = '', role = '', sortBy = 'created_at', 
                 FROM stores s
                 LEFT JOIN ratings r ON r.store_id = s.id
                 WHERE s.owner_id = u.id
-            ) AS storeRating
+            ) AS storeRating,
+            EXISTS(
+                SELECT 1 FROM stores s2 WHERE s2.owner_id = u.id
+            ) AS hasStore
         FROM users u
         ${where}
         ORDER BY ${sortBy} ${order}
@@ -118,6 +121,16 @@ export async function getAdminStores({ search = '', sortBy = 'created_at', order
  */
 export async function storeEmailExists(email) {
     const results = await query(`SELECT id FROM stores WHERE email = ?`, [email]);
+    return results.length > 0;
+}
+
+/**
+ * Check whether an owner already owns a store.
+ * @param {string} ownerId
+ * @returns {Promise<boolean>}
+ */
+export async function ownerHasStore(ownerId) {
+    const results = await query(`SELECT id FROM stores WHERE owner_id = ?`, [ownerId]);
     return results.length > 0;
 }
 

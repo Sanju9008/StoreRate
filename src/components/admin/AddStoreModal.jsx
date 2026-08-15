@@ -37,7 +37,9 @@ export default function AddStoreModal({ isOpen, onClose, onSuccess }) {
             });
             const data = await res.json();
             if (data.success) {
-                setStoreOwners(data.data);
+                // Filter out owners who already have a store
+                const availableOwners = data.data.filter(owner => !owner.hasStore);
+                setStoreOwners(availableOwners);
             }
         } catch (e) {
             console.error('Failed to fetch store owners');
@@ -161,12 +163,21 @@ export default function AddStoreModal({ isOpen, onClose, onSuccess }) {
                                 className="block w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 sm:text-sm bg-white"
                             >
                                 <option value="">Select an owner</option>
-                                {storeOwners.map(owner => (
-                                    <option key={owner.id} value={owner.id}>
-                                        {owner.name} ({owner.email})
-                                    </option>
-                                ))}
+                                {storeOwners.length === 0 ? (
+                                    <option value="" disabled>No available owners found</option>
+                                ) : (
+                                    storeOwners.map(owner => (
+                                        <option key={owner.id} value={owner.id}>
+                                            {owner.name} ({owner.email})
+                                        </option>
+                                    ))
+                                )}
                             </select>
+                            {storeOwners.length === 0 && (
+                                <p className="mt-1 text-xs text-amber-600">
+                                    All existing owners already manage a store. You must create a new owner first.
+                                </p>
+                            )}
                         </div>
                     </form>
                 </div>

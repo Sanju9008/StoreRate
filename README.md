@@ -1,62 +1,42 @@
 # StoreRate
 
-A robust, full-stack Store Rating Management System that connects **System Administrators**, **Store Owners**, and **Regular Users** through a secure, role-based platform. Built with Next.js App Router, a clean **service layer architecture**, and a raw MySQL backend for full data control.
+StoreRate is a full-stack web application I built to let users discover and rate stores, while giving store owners a dashboard to see how their store is performing and who's reviewing them. Admins can manage the whole platform — users, stores, and everything in between.
 
-## 🚀 Tech Stack
-
-| Layer | Technology |
-| :--- | :--- |
-| **Framework** | Next.js 14 (App Router) |
-| **UI** | React, Tailwind CSS, Lucide React |
-| **Backend** | Next.js API Routes (Node.js) — thin controllers + service layer |
-| **Database** | MySQL 8.0+ via `mysql2/promise` (Raw Parameterized Queries) |
-| **Auth** | JWT (`jsonwebtoken`), `bcryptjs`, DB-level Token Revocation |
+The app has three completely separate experiences depending on your role, all protected by JWT authentication with real server-side logout (tokens get deleted from the database on logout, not just cleared from the browser).
 
 ---
 
-## ✨ Core Features
+## What it's built with
 
-### 🔐 Unified Authentication & RBAC
-- Single login/register flow with dynamic redirect to role-specific dashboard
-- JWT-based auth backed by a `jwt_tokens` revocation table — real server-side logout
-- Multi-layer validation (client + API) enforcing name, address, and password rules
-- `ProtectedRoute` component blocks access to unauthorized roles client-side
-
-### 🛡️ System Administrator Dashboard
-- Live metrics: total users, total stores, total ratings
-- Multi-column sortable, searchable, filterable data tables for users and stores
-- Single **Add New User** modal with role selector (`SYSTEM_ADMIN` / `STORE_OWNER` / `NORMAL_USER`)
-- **Add New Store** modal with dynamic owner dropdown (fetches all `STORE_OWNER` accounts)
-
-### 🛍️ Normal User Dashboard
-- Browse all stores with debounced real-time search (name & address)
-- Sort by newest, highest rated, lowest rated, or alphabetical
-- Interactive 5-star rating widget — submit or modify ratings with live average updates
-
-### 🏢 Store Owner Dashboard
-- Overview card showing their store's average rating and total review count
-- Sortable reviewer log: name, email, address, rating, date
+- **Next.js 14** (App Router) — handles both the frontend and the backend API routes
+- **React + Tailwind CSS** — UI, with Lucide for icons
+- **MySQL 8** — raw parameterized queries via `mysql2/promise`, no ORM
+- **JWT + bcryptjs** — authentication and password hashing
+- **Service layer pattern** — all SQL lives in `src/services/`, API routes are thin controllers
 
 ---
 
-## 🏗️ Architecture
+## How the code is organized
+
+I went with a clean separation of concerns. The API routes just validate the request and call a service function — they don't touch SQL directly.
 
 ```
 src/
 ├── app/
-│   ├── api/                    ← Lean controllers (validate → call service → respond)
-│   │   ├── auth/               login | logout | me | register | update-password
-│   │   ├── admin/              dashboard | users | stores
-│   │   ├── owner/              dashboard
-│   │   ├── stores/             public store listing
-│   │   └── ratings/            upsert rating
-│   ├── admin/dashboard/        System Admin UI
-│   ├── owner/dashboard/        Store Owner UI
-│   ├── dashboard/              Normal User UI
-│   ├── login/ & register/      Auth pages
-│   └── page.jsx                Root redirect
+│   ├── api/              ← API routes (controllers only)
+│   │   ├── auth/         login, logout, me, register, update-password
+│   │   ├── admin/        dashboard, users, stores
+│   │   ├── owner/        dashboard
+│   │   ├── stores/       public store listing
+│   │   └── ratings/      submit/update rating
+│   ├── admin/dashboard/  Admin panel
+│   ├── owner/dashboard/  Store owner view
+│   ├── dashboard/        Normal user store browser
+│   ├── login/
+│   ├── register/
+│   └── page.jsx          Root redirect based on role
 │
-├── services/                   ← Data Access Layer (all raw SQL lives here)
+├── services/             ← All raw SQL queries live here
 │   ├── auth.service.js
 │   ├── admin.service.js
 │   ├── store.service.js
@@ -64,41 +44,45 @@ src/
 │   └── user.service.js
 │
 ├── lib/
-│   ├── db.js                   MySQL connection pool
-│   ├── auth.js                 bcrypt, JWT sign/verify, token CRUD
-│   ├── middleware.js            authorize() — token verification + role check
-│   ├── validators.js            Field validation functions
-│   └── api.js                  Client-side fetch wrapper (auto-auth + 401 logout)
+│   ├── db.js             MySQL connection pool
+│   ├── auth.js           JWT generation, token storage/deletion, bcrypt
+│   ├── middleware.js      authorize() — verifies token + checks role
+│   ├── validators.js     Input validation helpers
+│   └── api.js            Client-side fetch wrapper with auto-auth headers
 │
 ├── components/
-│   ├── ui/                     Alert | StarRating | SortableHeader | StatCard
-│   ├── common/                 Navbar | ProtectedRoute | ChangePasswordModal
-│   └── admin/                  AddUserModal | AddStoreModal
+│   ├── ui/               Alert, StarRating, SortableHeader, StatCard
+│   ├── common/           Navbar, ProtectedRoute, ChangePasswordModal
+│   └── admin/            AddUserModal, AddStoreModal
 │
 └── context/
-    └── AuthContext.jsx          Global auth state, login/logout/register actions
+    └── AuthContext.jsx   Global auth state
 ```
 
 ---
 
-## 🛠️ Quick Start Guide
+## Getting it running locally
 
 ### Prerequisites
-- Node.js v18+
-- MySQL 8.0+ Server
+- Node.js 18+
+- MySQL 8 running locally
 
-### 1. Clone & Install
+### Steps
+
+**1. Clone and install**
 ```bash
 git clone https://github.com/Sanju9008/StoreRate.git
 cd StoreRate
 npm install
 ```
 
-### 2. Environment Setup
-Copy `.env.example` to `.env` and fill in your MySQL credentials:
+**2. Set up your environment**
+
+Copy `.env.example` to `.env` and fill in your database credentials:
 ```bash
 cp .env.example .env
 ```
+
 ```env
 DB_HOST=localhost
 DB_USER=root
@@ -109,74 +93,88 @@ JWT_SECRET=your_super_secret_jwt_key_here
 JWT_EXPIRES_IN=1d
 ```
 
-### 3. Database Setup
+**3. Create the database and seed it**
 ```bash
-# Create schema and tables
-npm run db:setup
-
-# Seed demo users, stores, and ratings
-npm run db:seed
+npm run db:setup   # creates the tables
+npm run db:seed    # adds demo users, stores, and ratings
 ```
 
-### 4. Run Development Server
+**4. Start the dev server**
 ```bash
 npm run dev
 ```
-Open [http://localhost:3000](http://localhost:3000)
+
+Open [http://localhost:3000](http://localhost:3000) and you'll be redirected to login.
 
 ---
 
-## 🔑 Demo Credentials
+## Demo accounts
+
+After seeding, these accounts are ready to use:
 
 | Role | Email | Password |
-| :--- | :--- | :--- |
-| **System Admin** | `admin@platform.com` | `Admin@1234` |
-| **Store Owner** | `owner@platform.com` | `Owner@1234` |
-| **Normal User** | `user@platform.com` | `User@1234` |
-
-> All accounts satisfy the platform's validation rules: Name 20–60 chars, Password 8–16 chars with ≥1 uppercase and ≥1 special character.
+| --- | --- | --- |
+| System Admin | `admin@platform.com` | `Admin@1234` |
+| Store Owner | `owner@platform.com` | `Owner@1234` |
+| Normal User | `user@platform.com` | `User@1234` |
 
 ---
 
-## 🗄️ Database Schema
+## What each role can do
 
-Four normalized MySQL tables:
+**System Admin**
+- See total users, stores, and ratings on the dashboard
+- Add new users (any role) through a single form with a role dropdown
+- Add new stores and assign them to an existing store owner
+- Search and sort the user/store tables by any column
 
-| Table | Purpose |
-| :--- | :--- |
-| `users` | Identity: id, name, email, password (bcrypt), address, role (ENUM), timestamps |
-| `stores` | Store entities: id, name, email, address, owner_id (FK → users) |
-| `ratings` | Association: user_id × store_id, rating 1–5, UNIQUE(user_id, store_id) |
-| `jwt_tokens` | Token revocation: id, user_id, token, expires_at, is_revoked |
+**Store Owner**
+- See their store's average rating and total review count
+- View a sortable table of everyone who rated their store (name, email, address, rating, date)
+- If no store has been assigned to them yet, they see a message explaining that
 
----
-
-## 📡 API Reference
-
-| Method | Endpoint | Access | Description |
-| :--- | :--- | :--- | :--- |
-| `POST` | `/api/auth/register` | Public | Register as `NORMAL_USER` |
-| `POST` | `/api/auth/login` | Public | Authenticate, receive JWT |
-| `GET` | `/api/auth/me` | Authenticated | Verify session & fetch profile |
-| `POST` | `/api/auth/logout` | Authenticated | Revoke JWT from DB |
-| `PUT` | `/api/auth/update-password` | Authenticated | Change password, invalidate sessions |
-| `GET` | `/api/admin/dashboard` | `SYSTEM_ADMIN` | Platform metrics (users/stores/ratings) |
-| `GET` | `/api/admin/users` | `SYSTEM_ADMIN` | List users with search/filter/sort |
-| `POST` | `/api/admin/users` | `SYSTEM_ADMIN` | Create any role user |
-| `GET` | `/api/admin/stores` | `SYSTEM_ADMIN` | List stores with search/sort |
-| `POST` | `/api/admin/stores` | `SYSTEM_ADMIN` | Create store, optionally assign owner |
-| `GET` | `/api/owner/dashboard` | `STORE_OWNER` | Own store info + reviewer log |
-| `GET` | `/api/stores` | `NORMAL_USER` | All stores with avg rating + user's rating |
-| `POST` | `/api/ratings` | `NORMAL_USER` | Submit or update rating (UPSERT) |
+**Normal User**
+- Browse all stores with a search bar (searches name and address)
+- Sort stores by newest, highest rated, lowest rated, or name
+- Rate any store from 1–5 stars — submitting again updates their previous rating (no duplicates)
 
 ---
 
-## ✅ Validation Rules
+## Database schema
 
-| Field | Rule |
-| :--- | :--- |
-| **Name** | Required, 1–60 characters |
-| **Email** | Valid email format, must be unique |
-| **Password** | Min 6 characters (API); 8–16 chars + uppercase + special char (Change Password UI) |
-| **Address** | Required, max 400 characters |
-| **Rating** | Integer, 1–5 inclusive |
+Four tables, kept simple:
+
+- **`users`** — stores name, email, bcrypt-hashed password, address, and role (`SYSTEM_ADMIN`, `STORE_OWNER`, `NORMAL_USER`)
+- **`stores`** — name, email, address, and an optional `owner_id` foreign key pointing to a user
+- **`ratings`** — links a user to a store with a 1–5 rating. Has a unique constraint on `(user_id, store_id)` so each user can only have one rating per store
+- **`jwt_tokens`** — stores active tokens so we can properly invalidate them on logout instead of just waiting for expiry
+
+---
+
+## API routes
+
+| Method | Endpoint | Who can use it | What it does |
+| --- | --- | --- | --- |
+| POST | `/api/auth/register` | Public | Create a new normal user account |
+| POST | `/api/auth/login` | Public | Log in, get a JWT back |
+| GET | `/api/auth/me` | Any logged-in user | Verify the current session |
+| POST | `/api/auth/logout` | Any logged-in user | Delete the token from the DB |
+| PUT | `/api/auth/update-password` | Any logged-in user | Change password, invalidates all sessions |
+| GET | `/api/admin/dashboard` | Admin only | Get platform-wide counts |
+| GET | `/api/admin/users` | Admin only | List users with search/filter/sort |
+| POST | `/api/admin/users` | Admin only | Create a user with any role |
+| GET | `/api/admin/stores` | Admin only | List stores with search/sort |
+| POST | `/api/admin/stores` | Admin only | Create a store, optionally link an owner |
+| GET | `/api/owner/dashboard` | Store owner only | Get their store data + reviewer list |
+| GET | `/api/stores` | Normal users | Browse stores with ratings |
+| POST | `/api/ratings` | Normal users | Submit or update a rating |
+
+---
+
+## Validation
+
+- **Name**: 1–60 characters
+- **Email**: standard format, must be unique
+- **Password**: minimum 6 characters at the API level; the Change Password form enforces 8–16 chars with at least one uppercase letter and one special character
+- **Address**: up to 400 characters
+- **Rating**: must be a whole number between 1 and 5
