@@ -1,24 +1,18 @@
 import { NextResponse } from 'next/server';
 import { authorize } from '@/lib/middleware.js';
-import { query } from '@/lib/db.js';
+import { findUserById } from '@/services/auth.service.js';
 
 export async function GET(request) {
     try {
         const { errorResponse, user } = await authorize(request);
         if (errorResponse) return errorResponse;
 
-        // Fetch latest profile from DB to ensure it's fresh
-        const sql = `SELECT id, name, email, address, role FROM users WHERE id = ?`;
-        const users = await query(sql, [user.id]);
-        
-        if (users.length === 0) {
-             return NextResponse.json({ success: false, message: 'User not found' }, { status: 404 });
+        const freshUser = await findUserById(user.id);
+        if (!freshUser) {
+            return NextResponse.json({ success: false, message: 'User not found' }, { status: 404 });
         }
 
-        return NextResponse.json({
-            success: true,
-            user: users[0]
-        }, { status: 200 });
+        return NextResponse.json({ success: true, user: freshUser }, { status: 200 });
 
     } catch (error) {
         console.error('Me endpoint error:', error);

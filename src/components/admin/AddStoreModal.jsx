@@ -2,53 +2,66 @@
 
 import { useState, useEffect } from 'react';
 import { X, Loader2 } from 'lucide-react';
-import Alert from '@/components/Alert';
+import Alert from '@/components/ui/Alert';
 import { useAuth } from '@/context/AuthContext';
 
 export default function AddStoreModal({ isOpen, onClose, onSuccess }) {
     const { token } = useAuth();
     const [loading, setLoading] = useState(false);
-    const [fetchingOwners, setFetchingOwners] = useState(false);
-    const [owners, setOwners] = useState([]);
     const [error, setError] = useState('');
     
     const [formData, setFormData] = useState({
         name: '',
         email: '',
         address: '',
-        ownerId: ''
+        ownerId: '',
+        ownerName: ''
     });
+
+    const [storeOwners, setStoreOwners] = useState([]);
+    
+
 
     useEffect(() => {
         if (isOpen) {
-            fetchOwners();
+            setFormData({ name: '', email: '', address: '', ownerId: '', ownerName: '' });
+            setError('');
+            fetchStoreOwners();
         }
     }, [isOpen]);
 
-    const fetchOwners = async () => {
-        setFetchingOwners(true);
+    const fetchStoreOwners = async () => {
         try {
             const res = await fetch('/api/admin/users?role=STORE_OWNER', {
                 headers: { 'Authorization': `Bearer ${token}` }
             });
             const data = await res.json();
             if (data.success) {
-                setOwners(data.data);
+                setStoreOwners(data.data);
             }
         } catch (e) {
-            console.error('Failed to fetch owners');
-        } finally {
-            setFetchingOwners(false);
+            console.error('Failed to fetch store owners');
         }
     };
+
+
 
     if (!isOpen) return null;
 
     const handleChange = (e) => {
-        setFormData({ ...formData, [e.target.name]: e.target.value });
+        if (e.target.name === 'ownerId') {
+            const selectedOwner = storeOwners.find(owner => owner.id === e.target.value);
+            setFormData({
+                ...formData,
+                ownerId: e.target.value,
+                ownerName: selectedOwner ? selectedOwner.name : ''
+            });
+        } else {
+            setFormData({ ...formData, [e.target.name]: e.target.value });
+        }
     };
 
-    const isFormValid = formData.name.trim() && formData.email.includes('@') && formData.address.trim().length <= 400 && formData.address.trim().length > 0;
+    const isFormValid = formData.name.trim() && formData.email.includes('@') && formData.address.trim().length > 0;
 
     const handleSubmit = async (e) => {
         e.preventDefault();
@@ -62,7 +75,10 @@ export default function AddStoreModal({ isOpen, onClose, onSuccess }) {
         setLoading(true);
         try {
             const payload = { ...formData };
-            if (!payload.ownerId) delete payload.ownerId; // Optional
+            if (!payload.ownerId) {
+                delete payload.ownerId;
+                delete payload.ownerName;
+            }
 
             const res = await fetch('/api/admin/stores', {
                 method: 'POST',
@@ -137,22 +153,20 @@ export default function AddStoreModal({ isOpen, onClose, onSuccess }) {
                         </div>
 
                         <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-1">Assign Owner (Optional)</label>
-                            {fetchingOwners ? (
-                                <div className="text-sm text-gray-500 flex items-center py-2"><Loader2 className="w-4 h-4 mr-2 animate-spin" /> Fetching owners...</div>
-                            ) : (
-                                <select
-                                    name="ownerId"
-                                    value={formData.ownerId}
-                                    onChange={handleChange}
-                                    className="block w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 sm:text-sm bg-white"
-                                >
-                                    <option value="">-- No Owner Assigned --</option>
-                                    {owners.map(owner => (
-                                        <option key={owner.id} value={owner.id}>{owner.name} ({owner.email})</option>
-                                    ))}
-                                </select>
-                            )}
+                            <label className="block text-sm font-medium text-gray-700 mb-1">Assign Store Owner (Optional)</label>
+                            <select
+                                name="ownerId"
+                                value={formData.ownerId}
+                                onChange={handleChange}
+                                className="block w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 sm:text-sm bg-white"
+                            >
+                                <option value="">Select an owner</option>
+                                {storeOwners.map(owner => (
+                                    <option key={owner.id} value={owner.id}>
+                                        {owner.name} ({owner.email})
+                                    </option>
+                                ))}
+                            </select>
                         </div>
                     </form>
                 </div>
@@ -168,7 +182,7 @@ export default function AddStoreModal({ isOpen, onClose, onSuccess }) {
                     <button 
                         type="submit" 
                         form="addStoreForm"
-                        disabled={!isFormValid || loading || fetchingOwners}
+                        disabled={!isFormValid || loading}
                         className="px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center min-w-[100px]"
                     >
                         {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : 'Create Store'}

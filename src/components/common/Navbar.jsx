@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import Link from 'next/link';
 import { useAuth } from '@/context/AuthContext';
-import ChangePasswordModal from './ChangePasswordModal';
+import ChangePasswordModal from '@/components/common/ChangePasswordModal';
 import { LogOut, User, KeyRound, Menu, X } from 'lucide-react';
 
 export default function Navbar() {
@@ -15,20 +15,20 @@ export default function Navbar() {
 
     const roleBadgeColor = {
         SYSTEM_ADMIN: 'bg-indigo-100 text-indigo-800 border-indigo-200',
-        STORE_OWNER: 'bg-emerald-100 text-emerald-800 border-emerald-200',
-        NORMAL_USER: 'bg-slate-100 text-slate-800 border-slate-200'
+        STORE_OWNER:  'bg-emerald-100 text-emerald-800 border-emerald-200',
+        NORMAL_USER:  'bg-slate-100 text-slate-800 border-slate-200'
     }[user.role];
 
     const roleLabel = {
         SYSTEM_ADMIN: 'Admin',
-        STORE_OWNER: 'Store Owner',
-        NORMAL_USER: 'User'
+        STORE_OWNER:  'Store Owner',
+        NORMAL_USER:  'User'
     }[user.role];
 
     const dashboardLink = {
         SYSTEM_ADMIN: '/admin/dashboard',
-        STORE_OWNER: '/owner/dashboard',
-        NORMAL_USER: '/dashboard'
+        STORE_OWNER:  '/owner/dashboard',
+        NORMAL_USER:  '/dashboard'
     }[user.role];
 
     return (
@@ -63,15 +63,15 @@ export default function Navbar() {
 
                         <div className="h-8 w-px bg-gray-200 mx-2"></div>
 
-                        <button 
+                        <button
                             onClick={() => setIsModalOpen(true)}
                             className="flex items-center px-3 py-2 rounded-lg text-sm font-medium text-gray-600 hover:text-gray-900 hover:bg-gray-50 transition-colors"
                         >
                             <KeyRound className="h-4 w-4 mr-1.5" />
                             Password
                         </button>
-                        
-                        <button 
+
+                        <button
                             onClick={logout}
                             className="flex items-center px-3 py-2 rounded-lg text-sm font-medium text-red-600 hover:text-red-700 hover:bg-red-50 transition-colors"
                         >
@@ -82,7 +82,7 @@ export default function Navbar() {
 
                     {/* Mobile Menu Button */}
                     <div className="flex items-center sm:hidden">
-                        <button 
+                        <button
                             onClick={() => setIsMenuOpen(!isMenuOpen)}
                             className="p-2 rounded-md text-gray-400 hover:text-gray-500 hover:bg-gray-100"
                         >
@@ -112,13 +112,13 @@ export default function Navbar() {
                         </div>
                     </div>
                     <div className="px-2 pt-2 pb-3 space-y-1">
-                        <button 
+                        <button
                             onClick={() => setIsModalOpen(true)}
                             className="block w-full text-left px-3 py-2 rounded-md text-base font-medium text-gray-700 hover:text-gray-900 hover:bg-gray-50"
                         >
                             Change Password
                         </button>
-                        <button 
+                        <button
                             onClick={logout}
                             className="block w-full text-left px-3 py-2 rounded-md text-base font-medium text-red-600 hover:text-red-800 hover:bg-red-50"
                         >

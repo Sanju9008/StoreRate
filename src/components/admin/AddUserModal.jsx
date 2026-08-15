@@ -1,11 +1,11 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { X, Loader2, CheckCircle2 } from 'lucide-react';
-import Alert from '@/components/Alert';
+import Alert from '@/components/ui/Alert';
 import { useAuth } from '@/context/AuthContext';
 
-export default function AddUserModal({ isOpen, onClose, onSuccess }) {
+export default function AddUserModal({ isOpen, onClose, onSuccess, defaultRole = 'NORMAL_USER', lockRole = false, title = 'Add New User' }) {
     const { token } = useAuth();
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState('');
@@ -15,8 +15,21 @@ export default function AddUserModal({ isOpen, onClose, onSuccess }) {
         email: '',
         address: '',
         password: '',
-        role: 'NORMAL_USER'
+        role: defaultRole
     });
+
+    useEffect(() => {
+        if (isOpen) {
+            setFormData({
+                name: '',
+                email: '',
+                address: '',
+                password: '',
+                role: defaultRole
+            });
+            setError('');
+        }
+    }, [isOpen, defaultRole]);
 
     if (!isOpen) return null;
 
@@ -75,7 +88,7 @@ export default function AddUserModal({ isOpen, onClose, onSuccess }) {
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-gray-900/50 backdrop-blur-sm">
             <div className="bg-white rounded-xl shadow-xl w-full max-w-lg overflow-hidden transform transition-all flex flex-col max-h-[90vh]">
                 <div className="px-6 py-4 border-b border-gray-100 flex justify-between items-center shrink-0">
-                    <h3 className="text-lg font-semibold text-gray-900">Add New User</h3>
+                    <h3 className="text-lg font-semibold text-gray-900">{title}</h3>
                     <button onClick={onClose} className="text-gray-400 hover:text-gray-600">
                         <X className="h-5 w-5" />
                     </button>
@@ -120,7 +133,8 @@ export default function AddUserModal({ isOpen, onClose, onSuccess }) {
                                 name="role"
                                 value={formData.role}
                                 onChange={handleChange}
-                                className="block w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 sm:text-sm bg-white"
+                                disabled={lockRole}
+                                className={`block w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 sm:text-sm ${lockRole ? 'bg-gray-100 text-gray-500' : 'bg-white'}`}
                             >
                                 <option value="NORMAL_USER">Normal User</option>
                                 <option value="STORE_OWNER">Store Owner</option>
@@ -184,7 +198,7 @@ export default function AddUserModal({ isOpen, onClose, onSuccess }) {
                         disabled={!isFormValid || loading}
                         className="px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center min-w-[100px]"
                     >
-                        {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : 'Create User'}
+                        {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : title}
                     </button>
                 </div>
             </div>

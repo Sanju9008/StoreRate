@@ -1,6 +1,6 @@
 'use client';
 
-import { createContext, useContext, useState, useEffect } from 'react';
+import { createContext, useContext, useState, useEffect, useRef } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
 
 const AuthContext = createContext();
@@ -9,18 +9,36 @@ export function AuthProvider({ children }) {
     const [user, setUser] = useState(null);
     const [token, setToken] = useState(null);
     const [loading, setLoading] = useState(true);
+    const tokenRef = useRef(null);
     const router = useRouter();
     const pathname = usePathname();
 
     useEffect(() => {
-        const storedToken = localStorage.getItem('token');
-        if (storedToken) {
-            setToken(storedToken);
-            verifySession(storedToken);
-        } else {
-            setLoading(false);
+        tokenRef.current = token;
+    }, [token]);
+
+    const clearClientAuth = () => {
+        localStorage.removeItem('token');
+        tokenRef.current = null;
+        setToken(null);
+        setUser(null);
+    };
+
+    const handleLogout = async () => {
+        const activeToken = tokenRef.current || localStorage.getItem('token');
+        if (activeToken) {
+            try {
+                await fetch('/api/auth/logout', {
+                    method: 'POST',
+                    headers: { 'Authorization': `Bearer ${activeToken}` }
+                });
+            } catch (e) {
+                console.warn('Logout API failed:', e.message);
+            }
         }
-    }, []);
+        clearClientAuth();
+        router.push('/login');
+    };
 
     const verifySession = async (currentToken) => {
         try {
@@ -28,91 +46,101 @@ export function AuthProvider({ children }) {
                 headers: { 'Authorization': `Bearer ${currentToken}` }
             });
             const data = await res.json();
-            
             if (res.ok && data.success) {
+                tokenRef.current = currentToken;
+                setToken(currentToken);
                 setUser(data.user);
             } else {
-                handleLogout(); // Auto logout on 401
+                clearClientAuth();
+                router.push('/login');
             }
         } catch (error) {
-            console.error('Session verification failed', error);
-            handleLogout();
+            console.error('Session verification failed:', error);
+            clearClientAuth();
         } finally {
             setLoading(false);
         }
     };
 
-    const login = async (credentials) => {
-        const res = await fetch('/api/auth/login', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(credentials)
-        });
-        const data = await res.json();
-        
-        if (res.ok && data.success) {
-            setToken(data.token);
-            setUser(data.user);
-            localStorage.setItem('token', data.token);
-            redirectUser(data.user.role);
-            return { success: true };
+    useEffect(() => {
+        const storedToken = localStorage.getItem('token');
+        if (storedToken) {
+            verifySession(storedToken);
+        } else {
+            setLoading(false);
         }
-        return { success: false, message: data.message || 'Login failed', errors: data.errors };
+    }, []);
+
+    // Listen for 401 events dispatched by the centralized API client (src/lib/api.js)
+    useEffect(() => {
+        const onUnauthorized = () => handleLogout();
+        window.addEventListener('auth:logout', onUnauthorized);
+        return () => window.removeEventListener('auth:logout', onUnauthorized);
+    }, []);
+
+    const login = async (credentials) => {
+        try {
+            const res = await fetch('/api/auth/login', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(credentials)
+            });
+            const data = await res.json();
+            if (res.ok && data.success) {
+                localStorage.setItem('token', data.token);
+                tokenRef.current = data.token;
+                setToken(data.token);
+                setUser(data.user);
+                redirectUser(data.user.role);
+                return { success: true };
+            }
+            return { success: false, message: data.message || 'Login failed', errors: data.errors };
+        } catch (e) {
+            return { success: false, message: 'Network error. Please try again.' };
+        }
     };
 
     const register = async (userData) => {
-        const res = await fetch('/api/auth/register', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(userData)
-        });
-        const data = await res.json();
-        
-        if (res.ok && data.success) {
-            setToken(data.token);
-            setUser(data.user);
-            localStorage.setItem('token', data.token);
-            redirectUser(data.user.role);
-            return { success: true };
-        }
-        return { success: false, message: data.message || 'Registration failed', errors: data.errors };
-    };
-
-    const handleLogout = async () => {
-        if (token) {
-            try {
-                await fetch('/api/auth/logout', {
-                    method: 'POST',
-                    headers: { 'Authorization': `Bearer ${token}` }
-                });
-            } catch (e) {
-                // Ignore errors during logout API call
+        try {
+            const res = await fetch('/api/auth/register', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(userData)
+            });
+            const data = await res.json();
+            if (res.ok && data.success) {
+                localStorage.setItem('token', data.token);
+                tokenRef.current = data.token;
+                setToken(data.token);
+                setUser(data.user);
+                redirectUser(data.user.role);
+                return { success: true };
             }
-        }
-        setUser(null);
-        setToken(null);
-        localStorage.removeItem('token');
-        if (pathname !== '/login' && pathname !== '/register') {
-            router.push('/login');
+            return { success: false, message: data.message || 'Registration failed', errors: data.errors };
+        } catch (e) {
+            return { success: false, message: 'Network error. Please try again.' };
         }
     };
 
     const updatePassword = async (passwords) => {
-        const res = await fetch('/api/auth/update-password', {
-            method: 'PUT',
-            headers: { 
-                'Content-Type': 'application/json',
-                'Authorization': `Bearer ${token}`
-            },
-            body: JSON.stringify(passwords)
-        });
-        const data = await res.json();
-        
-        if (res.ok && data.success) {
-            await handleLogout();
-            return { success: true };
+        try {
+            const res = await fetch('/api/auth/update-password', {
+                method: 'PUT',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${tokenRef.current}`
+                },
+                body: JSON.stringify(passwords)
+            });
+            const data = await res.json();
+            if (res.ok && data.success) {
+                await handleLogout();
+                return { success: true };
+            }
+            return { success: false, message: data.message || 'Update failed', errors: data.errors };
+        } catch (e) {
+            return { success: false, message: 'Network error. Please try again.' };
         }
-        return { success: false, message: data.message || 'Update failed', errors: data.errors };
     };
 
     const redirectUser = (role) => {

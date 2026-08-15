@@ -1,10 +1,10 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import ProtectedRoute from '@/components/ProtectedRoute';
-import Navbar from '@/components/Navbar';
-import StarRating from '@/components/StarRating';
-import Alert from '@/components/Alert';
+import ProtectedRoute from '@/components/common/ProtectedRoute';
+import Navbar from '@/components/common/Navbar';
+import StarRating from '@/components/ui/StarRating';
+import Alert from '@/components/ui/Alert';
 import { useAuth } from '@/context/AuthContext';
 import { Search, Loader2, Store as StoreIcon, MapPin } from 'lucide-react';
 
@@ -154,19 +154,18 @@ export default function NormalUserDashboard() {
                                                 </p>
                                             </div>
                                             <div className="text-right shrink-0">
-                                                <div className="inline-flex items-center bg-yellow-50 px-2 py-1 rounded-lg border border-yellow-100">
-                                                    <span className="text-yellow-600 font-bold mr-1">{Number(store.overallRating).toFixed(1)}</span>
-                                                    <StarRating rating={Number(store.overallRating)} readonly={true} />
+                                                <div className="flex flex-col items-end">
+                                                    <span className="text-yellow-600 font-bold text-xl">★ {Number(store.overallRating).toFixed(1)}</span>
+                                                    <p className="text-xs text-gray-500 mt-1">({store.totalRatings} {store.totalRatings === 1 ? 'review' : 'reviews'})</p>
                                                 </div>
-                                                <p className="text-xs text-gray-500 mt-1">{store.totalRatings} Reviews</p>
                                             </div>
                                         </div>
 
-                                        <div className="mt-auto pt-5 border-t border-gray-100">
-                                            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-                                                <div>
-                                                    <p className="text-sm font-medium text-gray-700 mb-1">
-                                                        {hasRated ? 'Your Rating:' : 'Not rated yet'}
+                                        <div className="mt-auto pt-5">
+                                            <div className="bg-gray-50 border border-gray-100 rounded-lg p-3 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                                                <div className="flex items-center gap-3">
+                                                    <p className="text-sm font-medium text-gray-700">
+                                                        Your Rating:
                                                     </p>
                                                     <StarRating 
                                                         rating={userRatings[store.id] || 0} 
@@ -177,7 +176,7 @@ export default function NormalUserDashboard() {
                                                 <button
                                                     onClick={() => handleRate(store.id)}
                                                     disabled={userRatings[store.id] === 0 || ratingLoading === store.id || (!isModified && hasRated)}
-                                                    className="px-5 py-2.5 bg-blue-600 text-white text-sm font-medium rounded-xl hover:bg-blue-700 focus:ring-4 focus:ring-blue-100 disabled:opacity-50 disabled:cursor-not-allowed transition-all flex items-center justify-center min-w-[140px]"
+                                                    className="bg-blue-600 hover:bg-blue-700 text-white font-medium px-4 py-2 rounded-lg text-sm transition-colors flex items-center justify-center min-w-[140px] disabled:opacity-50 disabled:cursor-not-allowed"
                                                 >
                                                     {ratingLoading === store.id ? (
                                                         <Loader2 className="w-4 h-4 animate-spin" />

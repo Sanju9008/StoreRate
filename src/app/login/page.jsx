@@ -4,7 +4,7 @@ import { useState } from 'react';
 import Link from 'next/link';
 import { useAuth } from '@/context/AuthContext';
 import { Loader2, Mail, Lock, LogIn } from 'lucide-react';
-import Alert from '@/components/Alert';
+import Alert from '@/components/ui/Alert';
 
 export default function Login() {
     const { login } = useAuth();

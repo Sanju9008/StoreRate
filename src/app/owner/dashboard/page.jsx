@@ -1,10 +1,10 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import ProtectedRoute from '@/components/ProtectedRoute';
-import Navbar from '@/components/Navbar';
-import StarRating from '@/components/StarRating';
-import SortableHeader from '@/components/SortableHeader';
+import ProtectedRoute from '@/components/common/ProtectedRoute';
+import Navbar from '@/components/common/Navbar';
+import StarRating from '@/components/ui/StarRating';
+import SortableHeader from '@/components/ui/SortableHeader';
 import { useAuth } from '@/context/AuthContext';
 import { Store, Loader2, Users, Star, MapPin, Mail } from 'lucide-react';
 
@@ -101,18 +101,18 @@ export default function StoreOwnerDashboard() {
                             </div>
 
                             {/* Customer Ratings Table */}
-                            <div className="bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden">
-                                <div className="px-6 py-5 border-b border-gray-200 bg-white">
+                            <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+                                <div className="px-6 py-5 border-b border-gray-100 bg-white">
                                     <h3 className="text-lg font-bold text-gray-900">Customer Feedback Log</h3>
                                 </div>
                                 
                                 <div className="overflow-x-auto">
-                                    <table className="min-w-full divide-y divide-gray-200">
+                                    <table className="w-full divide-y divide-gray-200">
                                         <thead className="bg-gray-50">
                                             <tr>
                                                 <SortableHeader label="Reviewer Name" columnKey="name" currentSort={sort.key} currentOrder={sort.order} onSort={handleSort} />
-                                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Email</th>
-                                                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Address</th>
+                                                <th className="px-5 py-3.5 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Email</th>
+                                                <th className="px-5 py-3.5 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Address</th>
                                                 <SortableHeader label="Rating" columnKey="rating" currentSort={sort.key} currentOrder={sort.order} onSort={handleSort} />
                                                 <SortableHeader label="Date" columnKey="created_at" currentSort={sort.key} currentOrder={sort.order} onSort={handleSort} />
                                             </tr>
@@ -127,13 +127,13 @@ export default function StoreOwnerDashboard() {
                                                 </tr>
                                             ) : ratings.map((review, idx) => (
                                                 <tr key={idx} className="hover:bg-gray-50">
-                                                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{review.name}</td>
-                                                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{review.email}</td>
-                                                    <td className="px-6 py-4 text-sm text-gray-500 max-w-xs truncate">{review.address}</td>
-                                                    <td className="px-6 py-4 whitespace-nowrap">
+                                                    <td className="px-5 py-3.5 whitespace-nowrap text-sm font-medium text-gray-900">{review.name}</td>
+                                                    <td className="px-5 py-3.5 whitespace-nowrap text-sm text-gray-500">{review.email}</td>
+                                                    <td className="px-5 py-3.5 text-sm text-gray-500 max-w-xs truncate">{review.address}</td>
+                                                    <td className="px-5 py-3.5 whitespace-nowrap">
                                                         <StarRating rating={review.rating} readonly={true} />
                                                     </td>
-                                                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{new Date(review.created_at).toLocaleDateString()}</td>
+                                                    <td className="px-5 py-3.5 whitespace-nowrap text-sm text-gray-500">{new Date(review.created_at).toLocaleDateString()}</td>
                                                 </tr>
                                             ))}
                                         </tbody>

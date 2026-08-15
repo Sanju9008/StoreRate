@@ -22,6 +22,9 @@ export function generateToken(user) {
 }
 
 export async function storeToken(userId, token, expiresAt) {
+    // Delete any existing tokens for this user to enforce single-session rule
+    await query(`DELETE FROM jwt_tokens WHERE user_id = ?`, [userId]);
+
     const sql = `
         INSERT INTO jwt_tokens (id, user_id, token, expires_at)
         VALUES (UUID(), ?, ?, ?)
@@ -33,11 +36,12 @@ export async function storeToken(userId, token, expiresAt) {
     await query(sql, [userId, token, expireDate]);
 }
 
-export async function revokeToken(token) {
-    const sql = `
-        UPDATE jwt_tokens SET is_revoked = TRUE WHERE token = ?
-    `;
-    await query(sql, [token]);
+export async function deleteToken(identifier, byUserId = false) {
+    if (byUserId) {
+        await query(`DELETE FROM jwt_tokens WHERE user_id = ?`, [identifier]);
+    } else {
+        await query(`DELETE FROM jwt_tokens WHERE token = ?`, [identifier]);
+    }
 }
 
 export async function verifyAuthToken(request) {
@@ -56,11 +60,12 @@ export async function verifyAuthToken(request) {
 
         // Check if token exists and is not revoked in the db
         const sql = `
-            SELECT is_revoked FROM jwt_tokens WHERE token = ?
+            SELECT * FROM jwt_tokens 
+            WHERE token = ? AND user_id = ? AND expires_at > NOW() AND is_revoked = FALSE
         `;
-        const results = await query(sql, [token]);
+        const results = await query(sql, [token, decoded.id]);
         
-        if (results.length === 0 || results[0].is_revoked) {
+        if (results.length === 0) {
             return null;
         }
 

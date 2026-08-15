@@ -3,7 +3,7 @@ USE `storerate_db`;
 
 CREATE TABLE IF NOT EXISTS `users` (
     `id` VARCHAR(36) PRIMARY KEY,
-    `name` VARCHAR(60) NOT NULL CHECK (CHAR_LENGTH(name) >= 20 AND CHAR_LENGTH(name) <= 60),
+    `name` VARCHAR(60) NOT NULL,
     `email` VARCHAR(255) NOT NULL UNIQUE,
     `password` VARCHAR(255) NOT NULL,
     `address` VARCHAR(400) NOT NULL,
@@ -17,6 +17,7 @@ CREATE TABLE IF NOT EXISTS `stores` (
     `name` VARCHAR(100) NOT NULL,
     `email` VARCHAR(255) NOT NULL UNIQUE,
     `address` VARCHAR(400) NOT NULL,
+    `owner_name` VARCHAR(100) NULL,
     `owner_id` VARCHAR(36) NULL,
     `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     `updated_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
@@ -44,3 +45,26 @@ CREATE TABLE IF NOT EXISTS `jwt_tokens` (
     `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (`user_id`) REFERENCES `users`(`id`) ON DELETE CASCADE
 );
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+ 
+
+
+
+ 

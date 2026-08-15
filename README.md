@@ -1,124 +1,182 @@
 # StoreRate
 
-A robust, full-stack Store Rating Management System designed to seamlessly connect system administrators, store owners, and regular consumers through a unified, secure platform. Built with a modern Next.js architecture and powered by a highly optimized raw MySQL backend, StoreRate enforces strict role-based access control and high data integrity.
+A robust, full-stack Store Rating Management System that connects **System Administrators**, **Store Owners**, and **Regular Users** through a secure, role-based platform. Built with Next.js App Router, a clean **service layer architecture**, and a raw MySQL backend for full data control.
 
 ## 🚀 Tech Stack
-- **Frontend**: Next.js (App Router), React, Tailwind CSS, Lucide React
-- **Backend**: Next.js API Routes (Node.js)
-- **Database**: MySQL 8.0+ via `mysql2/promise` (Raw Parameterized Queries)
-- **Security**: JSON Web Tokens (JWT), bcryptjs for password hashing, Token Revocation Tables
+
+| Layer | Technology |
+| :--- | :--- |
+| **Framework** | Next.js 14 (App Router) |
+| **UI** | React, Tailwind CSS, Lucide React |
+| **Backend** | Next.js API Routes (Node.js) — thin controllers + service layer |
+| **Database** | MySQL 8.0+ via `mysql2/promise` (Raw Parameterized Queries) |
+| **Auth** | JWT (`jsonwebtoken`), `bcryptjs`, DB-level Token Revocation |
 
 ---
 
 ## ✨ Core Features
 
-### Unified Authentication & RBAC
-- **Single Entry Point**: A unified login and registration flow that dynamically routing users to role-specific dashboards based on their assigned `role` (`SYSTEM_ADMIN`, `STORE_OWNER`, `NORMAL_USER`).
-- **Token Lifecycle**: JWT-based stateless authentication coupled with a `jwt_tokens` database table enabling instantaneous, server-side token revocation on logout.
-- **Data Integrity Validation**: Multi-layer (Client + API) strict validation enforcing:
-  - Name: 20–60 characters
-  - Address: Max 400 characters
-  - Password: 8–16 characters containing at least 1 uppercase letter and 1 special character.
+### 🔐 Unified Authentication & RBAC
+- Single login/register flow with dynamic redirect to role-specific dashboard
+- JWT-based auth backed by a `jwt_tokens` revocation table — real server-side logout
+- Multi-layer validation (client + API) enforcing name, address, and password rules
+- `ProtectedRoute` component blocks access to unauthorized roles client-side
 
 ### 🛡️ System Administrator Dashboard
-- **Executive Metrics**: Live statistics on total users, total stores, and total ratings across the platform.
-- **Data Grids**: Interactive, multi-column sortable data tables for managing users and stores.
-- **Search & Filter**: Real-time debounced search by name, email, or address, combined with role dropdown filtering.
-- **Entity Creation**: Dedicated modals to create verified Users and link new Stores to existing `STORE_OWNER` accounts securely.
+- Live metrics: total users, total stores, total ratings
+- Multi-column sortable, searchable, filterable data tables for users and stores
+- Single **Add New User** modal with role selector (`SYSTEM_ADMIN` / `STORE_OWNER` / `NORMAL_USER`)
+- **Add New Store** modal with dynamic owner dropdown (fetches all `STORE_OWNER` accounts)
 
 ### 🛍️ Normal User Dashboard
-- **Discovery**: A clean, accessible directory to browse available stores, featuring dynamic debounced search querying both Name and Address.
-- **Interactive Ratings**: Instant visual feedback via an integrated `<StarRating />` component, allowing users to submit new ratings (1-5 stars) or dynamically modify existing ones through atomic UPSERT database operations without reloading the page.
+- Browse all stores with debounced real-time search (name & address)
+- Sort by newest, highest rated, lowest rated, or alphabetical
+- Interactive 5-star rating widget — submit or modify ratings with live average updates
 
 ### 🏢 Store Owner Dashboard
-- **Store Performance**: A focused, high-level summary header showcasing their assigned store's average decimal rating and aggregate review count.
-- **Customer Logs**: A sortable, structured ledger detailing all customer feedback, exposing reviewer credentials (Name, Email, Address, Date) alongside their submitted score.
+- Overview card showing their store's average rating and total review count
+- Sortable reviewer log: name, email, address, rating, date
+
+---
+
+## 🏗️ Architecture
+
+```
+src/
+├── app/
+│   ├── api/                    ← Lean controllers (validate → call service → respond)
+│   │   ├── auth/               login | logout | me | register | update-password
+│   │   ├── admin/              dashboard | users | stores
+│   │   ├── owner/              dashboard
+│   │   ├── stores/             public store listing
+│   │   └── ratings/            upsert rating
+│   ├── admin/dashboard/        System Admin UI
+│   ├── owner/dashboard/        Store Owner UI
+│   ├── dashboard/              Normal User UI
+│   ├── login/ & register/      Auth pages
+│   └── page.jsx                Root redirect
+│
+├── services/                   ← Data Access Layer (all raw SQL lives here)
+│   ├── auth.service.js
+│   ├── admin.service.js
+│   ├── store.service.js
+│   ├── rating.service.js
+│   └── user.service.js
+│
+├── lib/
+│   ├── db.js                   MySQL connection pool
+│   ├── auth.js                 bcrypt, JWT sign/verify, token CRUD
+│   ├── middleware.js            authorize() — token verification + role check
+│   ├── validators.js            Field validation functions
+│   └── api.js                  Client-side fetch wrapper (auto-auth + 401 logout)
+│
+├── components/
+│   ├── ui/                     Alert | StarRating | SortableHeader | StatCard
+│   ├── common/                 Navbar | ProtectedRoute | ChangePasswordModal
+│   └── admin/                  AddUserModal | AddStoreModal
+│
+└── context/
+    └── AuthContext.jsx          Global auth state, login/logout/register actions
+```
 
 ---
 
 ## 🛠️ Quick Start Guide
 
-### 1. Prerequisites
-- Node.js (v18+)
-- MySQL Workbench / Server (v8.0+)
+### Prerequisites
+- Node.js v18+
+- MySQL 8.0+ Server
 
-### 2. Installation
-Clone the repository and install the dependencies:
+### 1. Clone & Install
 ```bash
-git clone <repository_url>
-cd My_Dashboard
+git clone https://github.com/Sanju9008/StoreRate.git
+cd StoreRate
 npm install
 ```
 
-### 3. Environment Setup
-Create a `.env` file in the root directory and configure your credentials (reference `.env.example`):
+### 2. Environment Setup
+Copy `.env.example` to `.env` and fill in your MySQL credentials:
+```bash
+cp .env.example .env
+```
 ```env
 DB_HOST=localhost
 DB_USER=root
 DB_PASSWORD=your_mysql_password
 DB_NAME=storerate_db
 DB_PORT=3306
-
 JWT_SECRET=your_super_secret_jwt_key_here
+JWT_EXPIRES_IN=1d
 ```
 
-### 4. Database Initialization & Seeding
-Use the automated npm scripts to bootstrap your MySQL database. This creates the schema, necessary tables, and injects the demo credentials.
+### 3. Database Setup
 ```bash
-# Execute schema creation
+# Create schema and tables
 npm run db:setup
 
-# Inject Demo Data
+# Seed demo users, stores, and ratings
 npm run db:seed
 ```
 
-### 5. Run the Application
+### 4. Run Development Server
 ```bash
 npm run dev
 ```
-Navigate to [http://localhost:3000](http://localhost:3000) to access the platform.
+Open [http://localhost:3000](http://localhost:3000)
 
 ---
 
 ## 🔑 Demo Credentials
 
-All seed accounts adhere strictly to the 20-60 character name restriction and the secure password requirements.
+| Role | Email | Password |
+| :--- | :--- | :--- |
+| **System Admin** | `admin@platform.com` | `Admin@1234` |
+| **Store Owner** | `owner@platform.com` | `Owner@1234` |
+| **Normal User** | `user@platform.com` | `User@1234` |
 
-| Role | Email | Password | Assigned Name |
-| :--- | :--- | :--- | :--- |
-| **System Admin** | `admin@platform.com` | `Admin@1234` | System Platform Administrator Lead |
-| **Store Owner** | `owner@platform.com` | `Owner@1234` | Registered Store Owner Representative |
-| **Normal User** | `user@platform.com` | `User@1234` | Verified Regular Customer Profile |
+> All accounts satisfy the platform's validation rules: Name 20–60 chars, Password 8–16 chars with ≥1 uppercase and ≥1 special character.
 
 ---
 
-## 🏗️ Database Architecture
+## 🗄️ Database Schema
 
-The system utilizes four cleanly normalized MySQL tables:
+Four normalized MySQL tables:
 
-1. **`users`**: Centralized identity management tracking `id`, `name`, `email`, `password` (hashed), `address`, `role` (ENUM), and timestamps.
-2. **`stores`**: Independent entities tracking `id`, `name`, `email`, `address`, and an optional `owner_id` Foreign Key linked to the `users` table.
-3. **`ratings`**: Association table mapping a `user_id` to a `store_id` containing an integer `rating` (1-5). Enforces `UNIQUE(user_id, store_id)` to ensure one rating per user per store.
-4. **`jwt_tokens`**: Security table used for token validation and instantaneous logout capabilities storing `id`, `user_id`, `token`, `expires_at`.
+| Table | Purpose |
+| :--- | :--- |
+| `users` | Identity: id, name, email, password (bcrypt), address, role (ENUM), timestamps |
+| `stores` | Store entities: id, name, email, address, owner_id (FK → users) |
+| `ratings` | Association: user_id × store_id, rating 1–5, UNIQUE(user_id, store_id) |
+| `jwt_tokens` | Token revocation: id, user_id, token, expires_at, is_revoked |
 
 ---
 
 ## 📡 API Reference
 
-All API routes utilize strict validation and Role-Based Access Control middleware.
-
-| Method | Endpoint | Access Level | Description |
+| Method | Endpoint | Access | Description |
 | :--- | :--- | :--- | :--- |
-| `POST` | `/api/auth/register` | Public | Register a new `NORMAL_USER` |
-| `POST` | `/api/auth/login` | Public | Authenticate and issue JWT |
-| `GET` | `/api/auth/me` | Authenticated | Verify active session & retrieve profile |
-| `POST` | `/api/auth/logout` | Authenticated | Revoke active JWT |
-| `PUT` | `/api/auth/update-password`| Authenticated | Secure password modification |
-| `GET` | `/api/admin/dashboard` | `SYSTEM_ADMIN` | Fetch aggregate system metrics |
-| `GET` | `/api/admin/users` | `SYSTEM_ADMIN` | Query, filter, and sort users |
-| `POST` | `/api/admin/users` | `SYSTEM_ADMIN` | Provision new platform users |
-| `GET` | `/api/admin/stores` | `SYSTEM_ADMIN` | Query and sort stores |
-| `POST` | `/api/admin/stores` | `SYSTEM_ADMIN` | Provision and assign new stores |
-| `GET` | `/api/owner/dashboard` | `STORE_OWNER` | Fetch assigned store & review log |
-| `GET` | `/api/stores` | `NORMAL_USER` | Discover available stores w/ ratings |
-| `POST` | `/api/ratings` | `NORMAL_USER` | Submit or modify a store rating (UPSERT) |
+| `POST` | `/api/auth/register` | Public | Register as `NORMAL_USER` |
+| `POST` | `/api/auth/login` | Public | Authenticate, receive JWT |
+| `GET` | `/api/auth/me` | Authenticated | Verify session & fetch profile |
+| `POST` | `/api/auth/logout` | Authenticated | Revoke JWT from DB |
+| `PUT` | `/api/auth/update-password` | Authenticated | Change password, invalidate sessions |
+| `GET` | `/api/admin/dashboard` | `SYSTEM_ADMIN` | Platform metrics (users/stores/ratings) |
+| `GET` | `/api/admin/users` | `SYSTEM_ADMIN` | List users with search/filter/sort |
+| `POST` | `/api/admin/users` | `SYSTEM_ADMIN` | Create any role user |
+| `GET` | `/api/admin/stores` | `SYSTEM_ADMIN` | List stores with search/sort |
+| `POST` | `/api/admin/stores` | `SYSTEM_ADMIN` | Create store, optionally assign owner |
+| `GET` | `/api/owner/dashboard` | `STORE_OWNER` | Own store info + reviewer log |
+| `GET` | `/api/stores` | `NORMAL_USER` | All stores with avg rating + user's rating |
+| `POST` | `/api/ratings` | `NORMAL_USER` | Submit or update rating (UPSERT) |
+
+---
+
+## ✅ Validation Rules
+
+| Field | Rule |
+| :--- | :--- |
+| **Name** | Required, 1–60 characters |
+| **Email** | Valid email format, must be unique |
+| **Password** | Min 6 characters (API); 8–16 chars + uppercase + special char (Change Password UI) |
+| **Address** | Required, max 400 characters |
+| **Rating** | Integer, 1–5 inclusive |

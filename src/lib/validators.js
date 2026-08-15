@@ -1,7 +1,7 @@
 export function validateName(name) {
     if (typeof name !== 'string') return false;
     const trimmed = name.trim();
-    return trimmed.length >= 20 && trimmed.length <= 60;
+    return trimmed.length > 0 && trimmed.length <= 60;
 }
 
 export function validateEmail(email) {
@@ -12,8 +12,7 @@ export function validateEmail(email) {
 
 export function validatePassword(password) {
     if (typeof password !== 'string') return false;
-    const passwordRegex = /^(?=.*[A-Z])(?=.*[!@#$%^&*()_+\-=[\]{};':"\\|,.<>/?]).{8,16}$/;
-    return passwordRegex.test(password);
+    return password.length >= 6;
 }
 
 export function validateAddress(address) {
@@ -28,9 +27,9 @@ export function validateRating(rating) {
 
 export function validateSignup(body) {
     const errors = {};
-    if (!validateName(body.name)) errors.name = 'Name must be between 20 and 60 characters.';
+    if (!validateName(body.name)) errors.name = 'Name must be between 1 and 60 characters.';
     if (!validateEmail(body.email)) errors.email = 'Invalid email format.';
-    if (!validatePassword(body.password)) errors.password = 'Password must be 8-16 characters, include an uppercase letter and a special character.';
+    if (!validatePassword(body.password)) errors.password = 'Password must be at least 6 characters.';
     if (!validateAddress(body.address)) errors.address = 'Address must be between 1 and 400 characters.';
     
     return {

@@ -1,15 +1,15 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import ProtectedRoute from '@/components/ProtectedRoute';
-import Navbar from '@/components/Navbar';
-import StatCard from '@/components/StatCard';
-import SortableHeader from '@/components/SortableHeader';
+import ProtectedRoute from '@/components/common/ProtectedRoute';
+import Navbar from '@/components/common/Navbar';
+import StatCard from '@/components/ui/StatCard';
+import SortableHeader from '@/components/ui/SortableHeader';
 import AddUserModal from '@/components/admin/AddUserModal';
 import AddStoreModal from '@/components/admin/AddStoreModal';
 import { useAuth } from '@/context/AuthContext';
 import { Users, Store, Star, Plus, Search, Loader2 } from 'lucide-react';
-import Alert from '@/components/Alert';
+import Alert from '@/components/ui/Alert';
 
 export default function AdminDashboard() {
     const { token } = useAuth();
@@ -90,9 +90,15 @@ export default function AdminDashboard() {
     };
 
     const roleBadgeColor = (r) => {
-        if (r === 'SYSTEM_ADMIN') return 'bg-red-100 text-red-800';
-        if (r === 'STORE_OWNER') return 'bg-purple-100 text-purple-800';
-        return 'bg-blue-100 text-blue-800';
+        if (r === 'SYSTEM_ADMIN') return 'bg-indigo-100 text-indigo-800 border-indigo-200';
+        if (r === 'STORE_OWNER') return 'bg-emerald-100 text-emerald-800 border-emerald-200';
+        return 'bg-slate-100 text-slate-800 border-slate-200';
+    };
+
+    const roleLabel = (r) => {
+        if (r === 'SYSTEM_ADMIN') return 'Admin';
+        if (r === 'STORE_OWNER') return 'Store Owner';
+        return 'User';
     };
 
     return (
@@ -149,14 +155,14 @@ export default function AdminDashboard() {
                                         </div>
                                     </div>
 
-                                    <div className="overflow-x-auto border border-gray-200 rounded-lg">
-                                        <table className="min-w-full divide-y divide-gray-200">
+                                    <div className="overflow-x-auto border border-gray-100 rounded-xl overflow-hidden">
+                                        <table className="w-full divide-y divide-gray-200">
                                             <thead className="bg-gray-50">
                                                 <tr>
                                                     <SortableHeader label="Store Name" columnKey="name" currentSort={storeSort.key} currentOrder={storeSort.order} onSort={handleSortStores} />
                                                     <SortableHeader label="Email" columnKey="email" currentSort={storeSort.key} currentOrder={storeSort.order} onSort={handleSortStores} />
                                                     <SortableHeader label="Address" columnKey="address" currentSort={storeSort.key} currentOrder={storeSort.order} onSort={handleSortStores} />
-                                                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Owner</th>
+                                                    <th className="px-5 py-3.5 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Owner</th>
                                                     <SortableHeader label="Overall Rating" columnKey="rating" currentSort={storeSort.key} currentOrder={storeSort.order} onSort={handleSortStores} />
                                                     <SortableHeader label="Created Date" columnKey="created_at" currentSort={storeSort.key} currentOrder={storeSort.order} onSort={handleSortStores} />
                                                 </tr>
@@ -168,12 +174,12 @@ export default function AdminDashboard() {
                                                     <tr><td colSpan="6" className="px-6 py-12 text-center text-gray-500">No stores found.</td></tr>
                                                 ) : stores.map(store => (
                                                     <tr key={store.id} className="hover:bg-gray-50">
-                                                        <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{store.name}</td>
-                                                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{store.email}</td>
-                                                        <td className="px-6 py-4 text-sm text-gray-500 max-w-xs truncate">{store.address}</td>
-                                                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{store.ownerName || <span className="text-gray-400 italic">Unassigned</span>}</td>
-                                                        <td className="px-6 py-4 whitespace-nowrap text-sm font-semibold text-yellow-600">★ {Number(store.overallRating).toFixed(1)}</td>
-                                                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{new Date(store.created_at).toLocaleDateString()}</td>
+                                                        <td className="px-5 py-3.5 whitespace-nowrap text-sm font-medium text-gray-900">{store.name}</td>
+                                                        <td className="px-5 py-3.5 whitespace-nowrap text-sm text-gray-500">{store.email}</td>
+                                                        <td className="px-5 py-3.5 text-sm text-gray-500 max-w-xs truncate">{store.address}</td>
+                                                        <td className="px-5 py-3.5 whitespace-nowrap text-sm text-gray-500">{store.ownerName || <span className="text-gray-400 italic">Unassigned</span>}</td>
+                                                        <td className="px-5 py-3.5 whitespace-nowrap text-sm font-semibold text-yellow-600">★ {Number(store.overallRating).toFixed(1)}</td>
+                                                        <td className="px-5 py-3.5 whitespace-nowrap text-sm text-gray-500">{new Date(store.created_at).toLocaleDateString()}</td>
                                                     </tr>
                                                 ))}
                                             </tbody>
@@ -207,15 +213,15 @@ export default function AdminDashboard() {
                                         </select>
                                     </div>
 
-                                    <div className="overflow-x-auto border border-gray-200 rounded-lg">
-                                        <table className="min-w-full divide-y divide-gray-200">
+                                    <div className="overflow-x-auto border border-gray-100 rounded-xl overflow-hidden">
+                                        <table className="w-full divide-y divide-gray-200">
                                             <thead className="bg-gray-50">
                                                 <tr>
                                                     <SortableHeader label="Name" columnKey="name" currentSort={userSort.key} currentOrder={userSort.order} onSort={handleSortUsers} />
                                                     <SortableHeader label="Email" columnKey="email" currentSort={userSort.key} currentOrder={userSort.order} onSort={handleSortUsers} />
                                                     <SortableHeader label="Address" columnKey="address" currentSort={userSort.key} currentOrder={userSort.order} onSort={handleSortUsers} />
                                                     <SortableHeader label="Role" columnKey="role" currentSort={userSort.key} currentOrder={userSort.order} onSort={handleSortUsers} />
-                                                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Store Rating</th>
+                                                    <th className="px-5 py-3.5 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Store Rating</th>
                                                     <SortableHeader label="Created Date" columnKey="created_at" currentSort={userSort.key} currentOrder={userSort.order} onSort={handleSortUsers} />
                                                 </tr>
                                             </thead>
@@ -226,18 +232,18 @@ export default function AdminDashboard() {
                                                     <tr><td colSpan="6" className="px-6 py-12 text-center text-gray-500">No users found.</td></tr>
                                                 ) : users.map(u => (
                                                     <tr key={u.id} className="hover:bg-gray-50">
-                                                        <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{u.name}</td>
-                                                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{u.email}</td>
-                                                        <td className="px-6 py-4 text-sm text-gray-500 max-w-xs truncate">{u.address}</td>
-                                                        <td className="px-6 py-4 whitespace-nowrap">
-                                                            <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${roleBadgeColor(u.role)}`}>
-                                                                {u.role}
+                                                        <td className="px-5 py-3.5 whitespace-nowrap text-sm font-medium text-gray-900">{u.name}</td>
+                                                        <td className="px-5 py-3.5 whitespace-nowrap text-sm text-gray-500">{u.email}</td>
+                                                        <td className="px-5 py-3.5 text-sm text-gray-500 max-w-xs truncate">{u.address}</td>
+                                                        <td className="px-5 py-3.5 whitespace-nowrap">
+                                                            <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full border ${roleBadgeColor(u.role)}`}>
+                                                                {roleLabel(u.role)}
                                                             </span>
                                                         </td>
-                                                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                                        <td className="px-5 py-3.5 whitespace-nowrap text-sm text-gray-500">
                                                             {u.role === 'STORE_OWNER' ? `★ ${Number(u.storeRating).toFixed(1)}` : 'N/A'}
                                                         </td>
-                                                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{new Date(u.created_at).toLocaleDateString()}</td>
+                                                        <td className="px-5 py-3.5 whitespace-nowrap text-sm text-gray-500">{new Date(u.created_at).toLocaleDateString()}</td>
                                                     </tr>
                                                 ))}
                                             </tbody>
