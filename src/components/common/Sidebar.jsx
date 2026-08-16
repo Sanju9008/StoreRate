@@ -7,7 +7,7 @@ import { useAuth } from '@/context/AuthContext';
 import ChangePasswordModal from '@/components/common/ChangePasswordModal';
 import { 
     LogOut, KeyRound, LayoutDashboard, Store, Users, 
-    Star, MessageSquare, X, ChevronRight 
+    Star, MessageSquare, X, ChevronRight, Loader2
 } from 'lucide-react';
 
 export default function Sidebar({ mobileOpen, setMobileOpen }) {
@@ -15,6 +15,13 @@ export default function Sidebar({ mobileOpen, setMobileOpen }) {
     const pathname = usePathname();
     const searchParams = useSearchParams();
     const [isModalOpen, setIsModalOpen] = useState(false);
+    const [isLoggingOut, setIsLoggingOut] = useState(false);
+
+    const handleLogout = async () => {
+        setIsLoggingOut(true);
+        await logout();
+        setIsLoggingOut(false);
+    };
 
     if (!user) return null;
 
@@ -51,13 +58,20 @@ export default function Sidebar({ mobileOpen, setMobileOpen }) {
     const sidebarContent = (
         <div className="flex h-full flex-col bg-slate-900 text-slate-300">
             {/* Brand Header */}
-            <div className="flex h-16 shrink-0 items-center px-6 border-b border-slate-800">
+            <div className="flex h-16 shrink-0 items-center justify-between px-6 border-b border-slate-800">
                 <Link href={links[0]?.href || '/'} className="flex items-center gap-3">
                     <div className="h-8 w-8 bg-blue-600 rounded flex items-center justify-center text-white font-bold text-xl shadow-sm shadow-blue-900/20">
                         S
                     </div>
                     <span className="font-bold text-xl tracking-tight text-white">StoreRate</span>
                 </Link>
+                <button 
+                    type="button" 
+                    className="lg:hidden p-2 text-slate-400 hover:text-white hover:bg-slate-800 rounded-md transition-colors" 
+                    onClick={() => setMobileOpen(false)}
+                >
+                    <X className="h-6 w-6" />
+                </button>
             </div>
 
             {/* Navigation Links */}
@@ -76,6 +90,7 @@ export default function Sidebar({ mobileOpen, setMobileOpen }) {
                             <Link
                                 key={item.name}
                                 href={item.href}
+                                onClick={() => setMobileOpen(false)}
                                 className={`group flex items-center px-3 py-2.5 text-sm font-medium rounded-lg transition-all duration-200 ${
                                     isActive
                                         ? 'bg-slate-800 text-white font-medium'
@@ -113,11 +128,16 @@ export default function Sidebar({ mobileOpen, setMobileOpen }) {
                         Change Password
                     </button>
                     <button
-                        onClick={logout}
-                        className="w-full group flex items-center px-3 py-2 text-sm font-medium text-red-400 rounded-lg hover:bg-red-500/10 hover:text-red-300 transition-colors"
+                        onClick={handleLogout}
+                        disabled={isLoggingOut}
+                        className="w-full group flex items-center px-3 py-2 text-sm font-medium text-red-400 rounded-lg hover:bg-red-500/10 hover:text-red-300 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                     >
-                        <LogOut className="mr-3 h-4 w-4 text-red-500/70 group-hover:text-red-400" />
-                        Logout
+                        {isLoggingOut ? (
+                            <Loader2 className="mr-3 h-4 w-4 text-red-500/70 group-hover:text-red-400 animate-spin" />
+                        ) : (
+                            <LogOut className="mr-3 h-4 w-4 text-red-500/70 group-hover:text-red-400" />
+                        )}
+                        {isLoggingOut ? 'Logging out...' : 'Logout'}
                     </button>
                 </div>
             </div>
@@ -129,21 +149,16 @@ export default function Sidebar({ mobileOpen, setMobileOpen }) {
     return (
         <>
             {/* Desktop Sidebar */}
-            <div className="hidden md:flex md:w-64 md:flex-col md:fixed md:inset-y-0 z-20">
+            <div className="hidden lg:flex lg:w-64 lg:flex-col lg:fixed lg:inset-y-0 z-20">
                 {sidebarContent}
             </div>
 
             {/* Mobile Sidebar Overlay */}
             {mobileOpen && (
-                <div className="relative z-50 md:hidden">
+                <div className="relative z-50 lg:hidden">
                     <div className="fixed inset-0 bg-slate-900/80 backdrop-blur-sm transition-opacity" onClick={() => setMobileOpen(false)} />
                     <div className="fixed inset-0 flex">
-                        <div className="relative mr-16 flex w-full max-w-xs flex-1 transform transition duration-300 ease-in-out">
-                            <div className="absolute left-full top-0 flex w-16 justify-center pt-5">
-                                <button type="button" className="-m-2.5 p-2.5 text-white" onClick={() => setMobileOpen(false)}>
-                                    <X className="h-6 w-6" />
-                                </button>
-                            </div>
+                        <div className="relative flex w-full max-w-[280px] sm:max-w-xs flex-1 transform transition duration-300 ease-in-out">
                             {sidebarContent}
                         </div>
                     </div>

@@ -13,6 +13,8 @@ The app has three completely separate experiences depending on your role, all pr
 - **MySQL 8** — raw parameterized queries via `mysql2/promise`, no ORM
 - **JWT + bcryptjs** — authentication and password hashing
 - **Service layer pattern** — all SQL lives in `src/services/`, API routes are thin controllers
+- **Toast Notifications** — custom lightweight `ToastContext` for non-blocking alerts
+- **UX Enhancements** — custom debounce hooks (`useDebounce`) & skeleton UI components for loading states
 
 ---
 
@@ -46,17 +48,19 @@ src/
 ├── lib/
 │   ├── db.js             MySQL connection pool
 │   ├── auth.js           JWT generation, token storage/deletion, bcrypt
-│   ├── middleware.js      authorize() — verifies token + checks role
+│   ├── middleware.js     authorize() — verifies token + checks role
 │   ├── validators.js     Input validation helpers
-│   └── api.js            Client-side fetch wrapper with auto-auth headers
+│   ├── api.js            Client-side fetch wrapper with auto-auth headers
+│   └── useDebounce.js    Custom debounce hook for search inputs
 │
 ├── components/
-│   ├── ui/               Alert, StarRating, SortableHeader, StatCard
-│   ├── common/           Navbar, ProtectedRoute, ChangePasswordModal
+│   ├── ui/               Alert, StarRating, SortableHeader, StatCard, Toast, Skeleton
+│   ├── common/           Navbar, Sidebar, ProtectedRoute, ChangePasswordModal
 │   └── admin/            AddUserModal, AddStoreModal
 │
 └── context/
-    └── AuthContext.jsx   Global auth state
+    ├── AuthContext.jsx   Global auth state
+    └── ToastContext.jsx  Global toast notification state
 ```
 
 ---
@@ -137,6 +141,16 @@ After seeding, these accounts are ready to use:
 - Browse all stores with a search bar (searches name and address)
 - Sort stores by newest, highest rated, lowest rated, or name
 - Rate any store from 1–5 stars — submitting again updates their previous rating (no duplicates)
+
+---
+
+## ⚡ Performance & UX Improvements
+
+- **Optimistic UI Updates**: User star ratings update instantly on the screen before the network request resolves, with automatic rollback if the API fails.
+- **Search Debouncing (300ms)**: Added debouncing across all search bars (user marketplace, admin tables, owner feedback log) to prevent unnecessary database queries on every keystroke.
+- **SQL Query Optimization & Indexes**: Eliminated N+1 query loops using a single-pass `LEFT JOIN` with aggregated `AVG()` and `COUNT()` scores, backed by database indexes on `ratings(user_id, store_id)`, `stores(name, address)`, and `users(email)`.
+- **Toast Notifications**: Added lightweight, non-blocking toast alerts for password updates, store creations, and rating changes.
+- **Fully Responsive Design**: Mobile slide-over navigation drawer for Admin and Owner sidebars, horizontal scroll-safe data tables, and adaptive grids across all screen sizes.
 
 ---
 

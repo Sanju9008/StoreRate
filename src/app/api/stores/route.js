@@ -2,6 +2,8 @@ import { NextResponse } from 'next/server';
 import { authorize } from '@/lib/middleware.js';
 import { getStoresWithUserRating } from '@/services/store.service.js';
 
+export const dynamic = 'force-dynamic';
+
 export async function GET(request) {
     try {
         const { errorResponse, user } = await authorize(request, ['NORMAL_USER', 'SYSTEM_ADMIN']);

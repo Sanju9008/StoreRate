@@ -23,13 +23,13 @@ export default function Layout({ children, title }) {
             <Sidebar mobileOpen={mobileOpen} setMobileOpen={setMobileOpen} />
 
             {/* Main Content Area */}
-            <div className="flex-1 flex flex-col md:ml-64 min-w-0 transition-all duration-300">
+            <div className="flex-1 flex flex-col lg:ml-64 min-w-0 transition-all duration-300">
                 {/* Header Bar */}
                 <header className="sticky top-0 z-10 shrink-0 bg-white/80 backdrop-blur-md border-b border-slate-200/80 shadow-sm flex h-16 items-center justify-between px-4 sm:px-6 lg:px-8">
                     <div className="flex items-center gap-4">
                         <button
                             type="button"
-                            className="md:hidden -ml-2 p-2 text-slate-500 hover:text-slate-700 hover:bg-slate-100 rounded-md transition-colors"
+                            className="lg:hidden -ml-2 p-2 text-slate-500 hover:text-slate-700 hover:bg-slate-100 rounded-md transition-colors"
                             onClick={() => setMobileOpen(true)}
                         >
                             <Menu className="h-6 w-6" />

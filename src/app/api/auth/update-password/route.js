@@ -4,6 +4,8 @@ import { validatePassword } from '@/lib/validators.js';
 import { verifyPassword, hashPassword, deleteToken } from '@/lib/auth.js';
 import { getUserHashedPassword, updateUserPassword } from '@/services/auth.service.js';
 
+export const dynamic = 'force-dynamic';
+
 export async function PUT(request) {
     try {
         const { errorResponse, user } = await authorize(request);

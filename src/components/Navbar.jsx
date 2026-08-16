@@ -4,12 +4,19 @@ import { useState } from 'react';
 import Link from 'next/link';
 import { useAuth } from '@/context/AuthContext';
 import ChangePasswordModal from './ChangePasswordModal';
-import { LogOut, User, KeyRound, Menu, X } from 'lucide-react';
+import { LogOut, User, KeyRound, Menu, X, Loader2 } from 'lucide-react';
 
 export default function Navbar() {
     const { user, logout } = useAuth();
     const [isMenuOpen, setIsMenuOpen] = useState(false);
     const [isModalOpen, setIsModalOpen] = useState(false);
+    const [isLoggingOut, setIsLoggingOut] = useState(false);
+
+    const handleLogout = async () => {
+        setIsLoggingOut(true);
+        await logout();
+        setIsLoggingOut(false);
+    };
 
     if (!user) return null;
 
@@ -72,11 +79,16 @@ export default function Navbar() {
                         </button>
                         
                         <button 
-                            onClick={logout}
-                            className="flex items-center px-3 py-2 rounded-lg text-sm font-medium text-red-600 hover:text-red-700 hover:bg-red-50 transition-colors"
+                            onClick={handleLogout}
+                            disabled={isLoggingOut}
+                            className="flex items-center px-3 py-2 rounded-lg text-sm font-medium text-red-600 hover:text-red-700 hover:bg-red-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                         >
-                            <LogOut className="h-4 w-4 mr-1.5" />
-                            Logout
+                            {isLoggingOut ? (
+                                <Loader2 className="h-4 w-4 mr-1.5 animate-spin" />
+                            ) : (
+                                <LogOut className="h-4 w-4 mr-1.5" />
+                            )}
+                            {isLoggingOut ? 'Logging out...' : 'Logout'}
                         </button>
                     </div>
 
@@ -119,10 +131,11 @@ export default function Navbar() {
                             Change Password
                         </button>
                         <button 
-                            onClick={logout}
-                            className="block w-full text-left px-3 py-2 rounded-md text-base font-medium text-red-600 hover:text-red-800 hover:bg-red-50"
+                            onClick={handleLogout}
+                            disabled={isLoggingOut}
+                            className="block w-full text-left px-3 py-2 rounded-md text-base font-medium text-red-600 hover:text-red-800 hover:bg-red-50 disabled:opacity-50 disabled:cursor-not-allowed"
                         >
-                            Logout
+                            {isLoggingOut ? 'Logging out...' : 'Logout'}
                         </button>
                     </div>
                 </div>

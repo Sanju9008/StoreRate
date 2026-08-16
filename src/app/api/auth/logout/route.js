@@ -2,6 +2,8 @@ import { NextResponse } from 'next/server';
 import { deleteToken } from '@/lib/auth.js';
 import jwt from 'jsonwebtoken';
 
+export const dynamic = 'force-dynamic';
+
 export async function POST(request) {
     try {
         const authHeader = request.headers.get('authorization');
@@ -11,20 +13,16 @@ export async function POST(request) {
 
         const token = authHeader.substring(7).trim();
 
-        // Decode to get user_id (no verify needed for logout — we just want to clean up)
-        let userId = null;
+        // Safely decode and delete by user_id (VARCHAR) rather than token (TEXT) for reliable deletion
         try {
             const decoded = jwt.decode(token);
-            userId = decoded?.id || null;
-        } catch (e) {
-            // Token malformed, still try to delete by token string
-        }
-
-        // Delete all tokens for this user from DB (or fallback: delete by token string)
-        if (userId) {
-            await deleteToken(userId, true); // DELETE WHERE user_id = ?
-        } else {
-            await deleteToken(token, false); // DELETE WHERE token = ?
+            if (decoded && decoded.id) {
+                await deleteToken(decoded.id, true);
+            } else {
+                await deleteToken(token, false);
+            }
+        } catch(e) {
+            await deleteToken(token, false);
         }
 
         return NextResponse.json({

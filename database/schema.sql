@@ -66,5 +66,8 @@ CREATE TABLE IF NOT EXISTS `jwt_tokens` (
  
 
 
-
- 
+-- Performance Indexes
+CREATE INDEX idx_ratings_store_id ON ratings(store_id);
+CREATE INDEX idx_stores_name_address ON stores(name, address);
+CREATE INDEX idx_users_email ON users(email);
+CREATE INDEX idx_users_role ON users(role);

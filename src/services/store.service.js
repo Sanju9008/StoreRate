@@ -24,7 +24,7 @@ export async function getStoresWithUserRating({ userId, search = '', sortBy = 'c
             s.id, s.name, s.email, s.address,
             ROUND(COALESCE(AVG(r.rating), 0), 1) AS overallRating,
             COUNT(r.id) AS totalRatings,
-            (SELECT rating FROM ratings WHERE store_id = s.id AND user_id = ?) AS userSubmittedRating
+            MAX(CASE WHEN r.user_id = ? THEN r.rating ELSE NULL END) AS userSubmittedRating
         FROM stores s
         LEFT JOIN ratings r ON r.store_id = s.id
         ${where}

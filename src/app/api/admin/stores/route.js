@@ -4,6 +4,8 @@ import { getAdminStores, storeEmailExists, ownerHasStore, createStore } from '@/
 import { validateEmail, validateAddress } from '@/lib/validators.js';
 import { v4 as uuidv4 } from 'uuid';
 
+export const dynamic = 'force-dynamic';
+
 export async function GET(request) {
     try {
         const { errorResponse } = await authorize(request, ['SYSTEM_ADMIN']);

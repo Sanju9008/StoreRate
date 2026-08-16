@@ -11,6 +11,7 @@ import AddStoreModal from '@/components/admin/AddStoreModal';
 import { useAuth } from '@/context/AuthContext';
 import { Users, Store, Star, Plus, Search, Loader2 } from 'lucide-react';
 import Alert from '@/components/ui/Alert';
+import { useDebounce } from '@/hooks/useDebounce';
 
 function AdminDashboardContent() {
     const { token } = useAuth();
@@ -32,10 +33,12 @@ function AdminDashboardContent() {
 
     // Store Filters
     const [storeSearch, setStoreSearch] = useState('');
+    const debouncedStoreSearch = useDebounce(storeSearch, 300);
     const [storeSort, setStoreSort] = useState({ key: 'created_at', order: 'DESC' });
 
     // User Filters
     const [userSearch, setUserSearch] = useState('');
+    const debouncedUserSearch = useDebounce(userSearch, 300);
     const [userRole, setUserRole] = useState('');
     const [userSort, setUserSort] = useState({ key: 'created_at', order: 'DESC' });
 
@@ -44,16 +47,13 @@ function AdminDashboardContent() {
     }, [token]);
 
     useEffect(() => {
-        if (token) {
-            if (activeTab === 'stores') fetchStores();
-            else if (activeTab === 'users') fetchUsers();
-            else {
-                // Dashboard view relies on metrics, but let's clear loading state 
-                // since fetchMetrics runs independently.
-                setLoading(false);
-            }
+        if (!token) return;
+        if (activeTab === 'stores') {
+            fetchStores();
+        } else if (activeTab === 'users') {
+            fetchUsers();
         }
-    }, [activeTab, token, storeSearch, storeSort, userSearch, userRole, userSort]);
+    }, [activeTab, token, debouncedStoreSearch, storeSort, debouncedUserSearch, userRole, userSort]);
 
     const fetchMetrics = async () => {
         try {
@@ -66,21 +66,21 @@ function AdminDashboardContent() {
     const fetchStores = async () => {
         setLoading(true);
         try {
-            const query = new URLSearchParams({ search: storeSearch, sortBy: storeSort.key, order: storeSort.order }).toString();
+            const query = new URLSearchParams({ search: debouncedStoreSearch, sortBy: storeSort.key, order: storeSort.order }).toString();
             const res = await fetch(`/api/admin/stores?${query}`, { headers: { 'Authorization': `Bearer ${token}` } });
             const data = await res.json();
             if (data.success) setStores(data.data);
-        } finally { setLoading(false); }
+        } catch(e) {} finally { setLoading(false); }
     };
 
     const fetchUsers = async () => {
         setLoading(true);
         try {
-            const query = new URLSearchParams({ search: userSearch, role: userRole, sortBy: userSort.key, order: userSort.order }).toString();
+            const query = new URLSearchParams({ search: debouncedUserSearch, role: userRole, sortBy: userSort.key, order: userSort.order }).toString();
             const res = await fetch(`/api/admin/users?${query}`, { headers: { 'Authorization': `Bearer ${token}` } });
             const data = await res.json();
             if (data.success) setUsers(data.data);
-        } finally { setLoading(false); }
+        } catch (e) {} finally { setLoading(false); }
     };
 
     const handleSortStores = (key, order) => setStoreSort({ key, order });
@@ -131,10 +131,7 @@ function AdminDashboardContent() {
                                 <StatCard title="Total Ratings" value={metrics.totalRatings} icon={Star} colorClass="bg-[#FEF3C7] text-[#D97706]" />
                             </div>
                             
-                            <div className="bg-white rounded-2xl p-8 shadow-sm border border-[#E2E8F0]">
-                                <h2 className="text-lg font-bold text-[#0F172A] mb-2">Platform Activity</h2>
-                                <p className="text-[#64748B] text-sm">Welcome to the StoreRate admin console. Select Stores or Users from the sidebar to manage platform data.</p>
-                            </div>
+
                         </div>
                     )}
                     
@@ -160,14 +157,14 @@ function AdminDashboardContent() {
                             </div>
 
                             <div className="bg-white rounded-2xl shadow-sm border border-[#E2E8F0] overflow-hidden">
-                                <div className="overflow-x-auto">
-                                    <table className="w-full table-auto divide-y divide-[#E2E8F0]">
+                                <div className="overflow-x-auto rounded-xl border border-slate-200/80">
+                                    <table className="w-full min-w-[700px] table-auto divide-y divide-[#E2E8F0]">
                                         <thead className="bg-[#F8FAFC]">
                                             <tr>
                                                 <SortableHeader label="Store Name" columnKey="name" currentSort={storeSort.key} currentOrder={storeSort.order} onSort={handleSortStores} />
                                                 <SortableHeader label="Email" columnKey="email" currentSort={storeSort.key} currentOrder={storeSort.order} onSort={handleSortStores} />
                                                 <SortableHeader label="Address" columnKey="address" currentSort={storeSort.key} currentOrder={storeSort.order} onSort={handleSortStores} />
-                                                <th className="px-5 py-4 text-left text-xs font-bold text-[#64748B] uppercase tracking-wider">Owner</th>
+                                                <th className="px-3 py-2.5 sm:px-4 sm:py-3 text-left text-xs font-bold text-[#64748B] uppercase tracking-wider">Owner</th>
                                                 <SortableHeader label="Overall Rating" columnKey="rating" currentSort={storeSort.key} currentOrder={storeSort.order} onSort={handleSortStores} />
                                                 <SortableHeader label="Created Date" columnKey="created_at" currentSort={storeSort.key} currentOrder={storeSort.order} onSort={handleSortStores} />
                                             </tr>
@@ -184,12 +181,12 @@ function AdminDashboardContent() {
                                                 </tr>
                                             ) : stores.map(store => (
                                                 <tr key={store.id} className="hover:bg-[#F8FAFC] transition-colors">
-                                                    <td className="px-5 py-4 whitespace-nowrap text-sm font-semibold text-[#0F172A]">{store.name}</td>
-                                                    <td className="px-5 py-4 whitespace-nowrap text-sm text-[#64748B]">{store.email}</td>
-                                                    <td className="px-5 py-4 text-sm text-[#64748B] max-w-xs truncate">{store.address}</td>
-                                                    <td className="px-5 py-4 whitespace-nowrap text-sm text-[#64748B]">{store.ownerName || <span className="text-gray-400 italic">Unassigned</span>}</td>
-                                                    <td className="px-5 py-4 whitespace-nowrap text-sm font-bold text-[#D97706]">★ {Number(store.overallRating).toFixed(1)}</td>
-                                                    <td className="px-5 py-4 whitespace-nowrap text-sm text-[#64748B] font-medium">{new Date(store.created_at).toLocaleDateString()}</td>
+                                                    <td className="px-3 py-2.5 sm:px-4 sm:py-3 whitespace-nowrap text-xs sm:text-sm font-semibold text-[#0F172A]">{store.name}</td>
+                                                    <td className="px-3 py-2.5 sm:px-4 sm:py-3 whitespace-nowrap text-xs sm:text-sm text-[#64748B]">{store.email}</td>
+                                                    <td className="px-3 py-2.5 sm:px-4 sm:py-3 text-xs sm:text-sm text-[#64748B] max-w-[200px] sm:max-w-xs truncate">{store.address}</td>
+                                                    <td className="px-3 py-2.5 sm:px-4 sm:py-3 whitespace-nowrap text-xs sm:text-sm text-[#64748B]">{store.ownerName || <span className="text-gray-400 italic">Unassigned</span>}</td>
+                                                    <td className="px-3 py-2.5 sm:px-4 sm:py-3 whitespace-nowrap text-xs sm:text-sm font-bold text-[#D97706]">★ {Number(store.overallRating).toFixed(1)}</td>
+                                                    <td className="px-3 py-2.5 sm:px-4 sm:py-3 whitespace-nowrap text-xs sm:text-sm text-[#64748B] font-medium">{new Date(store.created_at).toLocaleDateString()}</td>
                                                 </tr>
                                             ))}
                                         </tbody>
@@ -233,15 +230,15 @@ function AdminDashboardContent() {
                             </div>
 
                             <div className="bg-white rounded-2xl shadow-sm border border-[#E2E8F0] overflow-hidden">
-                                <div className="overflow-x-auto">
-                                    <table className="w-full table-auto divide-y divide-[#E2E8F0]">
+                                <div className="overflow-x-auto rounded-xl border border-slate-200/80">
+                                    <table className="w-full min-w-[700px] table-auto divide-y divide-[#E2E8F0]">
                                         <thead className="bg-[#F8FAFC]">
                                             <tr>
                                                 <SortableHeader label="Name" columnKey="name" currentSort={userSort.key} currentOrder={userSort.order} onSort={handleSortUsers} />
                                                 <SortableHeader label="Email" columnKey="email" currentSort={userSort.key} currentOrder={userSort.order} onSort={handleSortUsers} />
                                                 <SortableHeader label="Address" columnKey="address" currentSort={userSort.key} currentOrder={userSort.order} onSort={handleSortUsers} />
                                                 <SortableHeader label="Role" columnKey="role" currentSort={userSort.key} currentOrder={userSort.order} onSort={handleSortUsers} />
-                                                <th className="px-5 py-4 text-left text-xs font-bold text-[#64748B] uppercase tracking-wider">Store Rating</th>
+                                                <th className="px-3 py-2.5 sm:px-4 sm:py-3 text-left text-xs font-bold text-[#64748B] uppercase tracking-wider">Store Rating</th>
                                                 <SortableHeader label="Created Date" columnKey="created_at" currentSort={userSort.key} currentOrder={userSort.order} onSort={handleSortUsers} />
                                             </tr>
                                         </thead>
@@ -257,18 +254,18 @@ function AdminDashboardContent() {
                                                 </tr>
                                             ) : users.map(u => (
                                                 <tr key={u.id} className="hover:bg-[#F8FAFC] transition-colors">
-                                                    <td className="px-5 py-4 whitespace-nowrap text-sm font-semibold text-[#0F172A]">{u.name}</td>
-                                                    <td className="px-5 py-4 whitespace-nowrap text-sm text-[#64748B]">{u.email}</td>
-                                                    <td className="px-5 py-4 text-sm text-[#64748B] max-w-xs truncate">{u.address}</td>
-                                                    <td className="px-5 py-4 whitespace-nowrap">
-                                                        <span className={`px-2.5 py-1 inline-flex text-xs font-bold rounded-full border ${roleBadgeColor(u.role)}`}>
+                                                    <td className="px-3 py-2.5 sm:px-4 sm:py-3 whitespace-nowrap text-xs sm:text-sm font-semibold text-[#0F172A]">{u.name}</td>
+                                                    <td className="px-3 py-2.5 sm:px-4 sm:py-3 whitespace-nowrap text-xs sm:text-sm text-[#64748B]">{u.email}</td>
+                                                    <td className="px-3 py-2.5 sm:px-4 sm:py-3 text-xs sm:text-sm text-[#64748B] max-w-[200px] sm:max-w-xs truncate">{u.address}</td>
+                                                    <td className="px-3 py-2.5 sm:px-4 sm:py-3 whitespace-nowrap">
+                                                        <span className={`px-2.5 py-1 inline-flex text-[10px] sm:text-xs font-bold rounded-full border ${roleBadgeColor(u.role)}`}>
                                                             {roleLabel(u.role)}
                                                         </span>
                                                     </td>
-                                                    <td className="px-5 py-4 whitespace-nowrap text-sm font-medium text-[#64748B]">
+                                                    <td className="px-3 py-2.5 sm:px-4 sm:py-3 whitespace-nowrap text-xs sm:text-sm font-medium text-[#64748B]">
                                                         {u.role === 'STORE_OWNER' ? <span className="text-[#D97706] font-bold">★ {Number(u.storeRating).toFixed(1)}</span> : 'N/A'}
                                                     </td>
-                                                    <td className="px-5 py-4 whitespace-nowrap text-sm text-[#64748B] font-medium">{new Date(u.created_at).toLocaleDateString()}</td>
+                                                    <td className="px-3 py-2.5 sm:px-4 sm:py-3 whitespace-nowrap text-xs sm:text-sm text-[#64748B] font-medium">{new Date(u.created_at).toLocaleDateString()}</td>
                                                 </tr>
                                             ))}
                                         </tbody>

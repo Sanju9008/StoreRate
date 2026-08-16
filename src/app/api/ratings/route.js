@@ -4,6 +4,8 @@ import { authorize } from '@/lib/middleware.js';
 import { validateRating } from '@/lib/validators.js';
 import { storeExists, upsertRating } from '@/services/rating.service.js';
 
+export const dynamic = 'force-dynamic';
+
 export async function POST(request) {
     try {
         const { errorResponse, user } = await authorize(request, ['NORMAL_USER']);

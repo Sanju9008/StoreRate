@@ -2,7 +2,8 @@
 
 import { useState } from 'react';
 import { useAuth } from '@/context/AuthContext';
-import { X, CheckCircle2, AlertCircle, Loader2 } from 'lucide-react';
+import { useToast } from '@/context/ToastContext';
+import { X, Loader2 } from 'lucide-react';
 
 export default function ChangePasswordModal({ isOpen, onClose }) {
     const { updatePassword } = useAuth();
@@ -10,8 +11,7 @@ export default function ChangePasswordModal({ isOpen, onClose }) {
     const [newPassword, setNewPassword] = useState('');
     const [confirmPassword, setConfirmPassword] = useState('');
     const [loading, setLoading] = useState(false);
-    const [error, setError] = useState('');
-    const [success, setSuccess] = useState('');
+    const { showSuccess, showError } = useToast();
 
     if (!isOpen) return null;
 
@@ -23,11 +23,9 @@ export default function ChangePasswordModal({ isOpen, onClose }) {
 
     const handleSubmit = async (e) => {
         e.preventDefault();
-        setError('');
-        setSuccess('');
 
         if (!isValid) {
-            setError('Please fulfill all password requirements.');
+            showError('Please fulfill all password requirements.');
             return;
         }
 
@@ -36,37 +34,24 @@ export default function ChangePasswordModal({ isOpen, onClose }) {
         setLoading(false);
 
         if (res.success) {
-            setSuccess('Password updated! Redirecting to login...');
-            setTimeout(() => onClose(), 2000);
+            showSuccess('Password updated successfully!');
+            onClose(); // close immediately or you can add a short timeout if preferred, the instruction says "and close modal".
         } else {
-            setError(res.message);
+            showError(res.message || 'Failed to update password');
         }
     };
 
     return (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-gray-900/50 backdrop-blur-sm">
-            <div className="bg-white rounded-xl shadow-xl w-full max-w-md overflow-hidden transform transition-all">
-                <div className="px-6 py-4 border-b border-gray-100 flex justify-between items-center">
+            <div className="bg-white rounded-xl shadow-xl w-[95%] sm:w-full max-w-md overflow-hidden transform transition-all flex flex-col max-h-[90vh]">
+                <div className="px-6 py-4 border-b border-gray-100 flex justify-between items-center shrink-0">
                     <h3 className="text-lg font-semibold text-gray-900">Change Password</h3>
                     <button onClick={onClose} className="text-gray-400 hover:text-gray-600">
                         <X className="h-5 w-5" />
                     </button>
                 </div>
 
-                <div className="px-6 py-4">
-                    {error && (
-                        <div className="mb-4 p-3 bg-red-50 text-red-700 text-sm rounded-lg flex items-start gap-2">
-                            <AlertCircle className="h-5 w-5 shrink-0" />
-                            {error}
-                        </div>
-                    )}
-                    {success && (
-                        <div className="mb-4 p-3 bg-green-50 text-green-700 text-sm rounded-lg flex items-start gap-2">
-                            <CheckCircle2 className="h-5 w-5 shrink-0" />
-                            {success}
-                        </div>
-                    )}
-
+                <div className="px-6 py-4 overflow-y-auto">
                     <form onSubmit={handleSubmit} className="space-y-4">
                         <div>
                             <label className="block text-sm font-medium text-gray-700 mb-1">Current Password</label>
@@ -108,7 +93,7 @@ export default function ChangePasswordModal({ isOpen, onClose }) {
                             </div>
                         </div>
 
-                        <div className="pt-4 flex justify-end gap-3">
+                        <div className="pt-4 flex justify-end gap-3 shrink-0">
                             <button
                                 type="button"
                                 onClick={onClose}

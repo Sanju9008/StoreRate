@@ -8,6 +8,7 @@ import StarRating from '@/components/ui/StarRating';
 import SortableHeader from '@/components/ui/SortableHeader';
 import { useAuth } from '@/context/AuthContext';
 import { Store, Loader2, Users, Star, MapPin, Mail, Search, MessageSquare } from 'lucide-react';
+import { useDebounce } from '@/hooks/useDebounce';
 
 function DashboardContent() {
     const { token, user } = useAuth();
@@ -21,6 +22,7 @@ function DashboardContent() {
     // Sort and Search state for the table
     const [sort, setSort] = useState({ key: 'created_at', order: 'DESC' });
     const [searchTerm, setSearchTerm] = useState('');
+    const debouncedSearchTerm = useDebounce(searchTerm, 300);
 
     useEffect(() => {
         if (token) fetchDashboardData();
@@ -51,14 +53,14 @@ function DashboardContent() {
     };
 
     const filteredRatings = useMemo(() => {
-        if (!searchTerm) return ratings;
-        const lower = searchTerm.toLowerCase();
+        if (!debouncedSearchTerm) return ratings;
+        const lower = debouncedSearchTerm.toLowerCase();
         return ratings.filter(r => 
             (r.name && r.name.toLowerCase().includes(lower)) ||
             (r.email && r.email.toLowerCase().includes(lower)) ||
             (r.address && r.address.toLowerCase().includes(lower))
         );
-    }, [ratings, searchTerm]);
+    }, [ratings, debouncedSearchTerm]);
 
     const fiveStarPercentage = useMemo(() => {
         if (ratings.length === 0) return 0;
@@ -162,13 +164,13 @@ function DashboardContent() {
 
                                     {/* Customer Ratings Table */}
                                     <div className="bg-white rounded-2xl shadow-sm border border-[#E2E8F0] overflow-hidden">
-                                        <div className="overflow-x-auto">
-                                            <table className="w-full table-auto divide-y divide-[#E2E8F0]">
+                                        <div className="overflow-x-auto rounded-xl border border-slate-200/80">
+                                            <table className="w-full min-w-[640px] table-auto divide-y divide-[#E2E8F0]">
                                                 <thead className="bg-[#F8FAFC]">
                                                     <tr>
                                                         <SortableHeader label="Reviewer Name" columnKey="name" currentSort={sort.key} currentOrder={sort.order} onSort={handleSort} />
-                                                        <th className="px-5 py-4 text-left text-xs font-bold text-[#64748B] uppercase tracking-wider">Email</th>
-                                                        <th className="px-5 py-4 text-left text-xs font-bold text-[#64748B] uppercase tracking-wider">Address</th>
+                                                        <th className="px-3 py-2.5 sm:px-4 sm:py-3 text-left text-xs font-bold text-[#64748B] uppercase tracking-wider">Email</th>
+                                                        <th className="px-3 py-2.5 sm:px-4 sm:py-3 text-left text-xs font-bold text-[#64748B] uppercase tracking-wider">Address</th>
                                                         <SortableHeader label="Rating" columnKey="rating" currentSort={sort.key} currentOrder={sort.order} onSort={handleSort} />
                                                         <SortableHeader label="Date" columnKey="created_at" currentSort={sort.key} currentOrder={sort.order} onSort={handleSort} />
                                                     </tr>
@@ -183,15 +185,15 @@ function DashboardContent() {
                                                         </tr>
                                                     ) : filteredRatings.map((review, idx) => (
                                                         <tr key={idx} className="hover:bg-[#F8FAFC] transition-colors">
-                                                            <td className="px-5 py-4 whitespace-nowrap text-sm font-semibold text-[#0F172A]">{review.name}</td>
-                                                            <td className="px-5 py-4 whitespace-nowrap text-sm text-[#64748B]">{review.email}</td>
-                                                            <td className="px-5 py-4 text-sm text-[#64748B] max-w-xs truncate">{review.address}</td>
-                                                            <td className="px-5 py-4 whitespace-nowrap">
+                                                            <td className="px-3 py-2.5 sm:px-4 sm:py-3 whitespace-nowrap text-xs sm:text-sm font-semibold text-[#0F172A]">{review.name}</td>
+                                                            <td className="px-3 py-2.5 sm:px-4 sm:py-3 whitespace-nowrap text-xs sm:text-sm text-[#64748B]">{review.email}</td>
+                                                            <td className="px-3 py-2.5 sm:px-4 sm:py-3 text-xs sm:text-sm text-[#64748B] max-w-[200px] sm:max-w-xs truncate">{review.address}</td>
+                                                            <td className="px-3 py-2.5 sm:px-4 sm:py-3 whitespace-nowrap">
                                                                 <div className="flex">
                                                                     <StarRating rating={review.rating} readonly={true} />
                                                                 </div>
                                                             </td>
-                                                            <td className="px-5 py-4 whitespace-nowrap text-sm text-[#64748B] font-medium">{new Date(review.created_at).toLocaleDateString()}</td>
+                                                            <td className="px-3 py-2.5 sm:px-4 sm:py-3 whitespace-nowrap text-xs sm:text-sm text-[#64748B] font-medium">{new Date(review.created_at).toLocaleDateString()}</td>
                                                         </tr>
                                                     ))}
                                                 </tbody>

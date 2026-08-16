@@ -47,18 +47,14 @@ export async function getUsers({ search = '', role = '', sortBy = 'created_at', 
     return query(`
         SELECT
             u.id, u.name, u.email, u.address, u.role, u.created_at,
-            (
-                SELECT COALESCE(AVG(r.rating), 0)
-                FROM stores s
-                LEFT JOIN ratings r ON r.store_id = s.id
-                WHERE s.owner_id = u.id
-            ) AS storeRating,
-            EXISTS(
-                SELECT 1 FROM stores s2 WHERE s2.owner_id = u.id
-            ) AS hasStore
+            COALESCE(AVG(r.rating), 0) AS storeRating,
+            MAX(CASE WHEN s.id IS NOT NULL THEN 1 ELSE 0 END) AS hasStore
         FROM users u
+        LEFT JOIN stores s ON s.owner_id = u.id
+        LEFT JOIN ratings r ON r.store_id = s.id
         ${where}
-        ORDER BY ${sortBy} ${order}
+        GROUP BY u.id
+        ORDER BY u.${sortBy} ${order}
     `, params);
 }
 

@@ -2,13 +2,13 @@
 
 import { useState, useEffect } from 'react';
 import { X, Loader2, CheckCircle2 } from 'lucide-react';
-import Alert from '@/components/ui/Alert';
 import { useAuth } from '@/context/AuthContext';
+import { useToast } from '@/context/ToastContext';
 
 export default function AddUserModal({ isOpen, onClose, onSuccess, defaultRole = 'NORMAL_USER', lockRole = false, title = 'Add New User' }) {
     const { token } = useAuth();
     const [loading, setLoading] = useState(false);
-    const [error, setError] = useState('');
+    const { showSuccess, showError } = useToast();
     
     const [formData, setFormData] = useState({
         name: '',
@@ -27,7 +27,6 @@ export default function AddUserModal({ isOpen, onClose, onSuccess, defaultRole =
                 password: '',
                 role: defaultRole
             });
-            setError('');
         }
     }, [isOpen, defaultRole]);
 
@@ -53,10 +52,9 @@ export default function AddUserModal({ isOpen, onClose, onSuccess, defaultRole =
 
     const handleSubmit = async (e) => {
         e.preventDefault();
-        setError('');
         
         if (!isFormValid) {
-            setError('Please fulfill all validation requirements.');
+            showError('Please fulfill all validation requirements.');
             return;
         }
 
@@ -71,14 +69,14 @@ export default function AddUserModal({ isOpen, onClose, onSuccess, defaultRole =
                 body: JSON.stringify(formData)
             });
             const data = await res.json();
-            
             if (res.ok && data.success) {
+                showSuccess('User created successfully!');
                 onSuccess();
             } else {
-                setError(data.message || 'Creation failed');
+                showError(data.message || 'Creation failed');
             }
         } catch (e) {
-            setError('An unexpected error occurred.');
+            showError('An unexpected error occurred.');
         } finally {
             setLoading(false);
         }
@@ -86,7 +84,7 @@ export default function AddUserModal({ isOpen, onClose, onSuccess, defaultRole =
 
     return (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-gray-900/50 backdrop-blur-sm">
-            <div className="bg-white rounded-xl shadow-xl w-full max-w-lg overflow-hidden transform transition-all flex flex-col max-h-[90vh]">
+            <div className="bg-white rounded-xl shadow-xl w-[95%] sm:w-full max-w-lg overflow-hidden transform transition-all flex flex-col max-h-[90vh]">
                 <div className="px-6 py-4 border-b border-gray-100 flex justify-between items-center shrink-0">
                     <h3 className="text-lg font-semibold text-gray-900">{title}</h3>
                     <button onClick={onClose} className="text-gray-400 hover:text-gray-600">
@@ -95,8 +93,6 @@ export default function AddUserModal({ isOpen, onClose, onSuccess, defaultRole =
                 </div>
 
                 <div className="px-6 py-4 overflow-y-auto">
-                    <Alert type="error" message={error} />
-
                     <form id="addUserForm" onSubmit={handleSubmit} className="space-y-4">
                         <div>
                             <label className="flex justify-between text-sm font-medium text-gray-700 mb-1">

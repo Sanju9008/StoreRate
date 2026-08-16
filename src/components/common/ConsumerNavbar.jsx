@@ -33,11 +33,11 @@ export default function ConsumerNavbar() {
 
                     {/* Right side Actions */}
                     <div className="flex items-center gap-3 sm:gap-5">
-                        <div className="hidden sm:flex items-center gap-2 bg-[#EEF2FF] text-[#2563EB] font-medium text-xs px-3 py-1.5 rounded-full border border-[#DBEAFE]">
-                            <div className="h-6 w-6 rounded-full bg-blue-100 text-blue-700 flex items-center justify-center font-bold shadow-sm">
+                        <div className="flex items-center gap-2 sm:bg-[#EEF2FF] text-[#2563EB] font-medium text-xs sm:px-3 sm:py-1.5 rounded-full sm:border border-[#DBEAFE]">
+                            <div className="h-6 w-6 rounded-full bg-blue-100 text-blue-700 flex items-center justify-center font-bold shadow-sm shrink-0">
                                 {user.name.charAt(0).toUpperCase()}
                             </div>
-                            <span className="pr-1">{user.name}</span>
+                            <span className="pr-1 hidden sm:block max-w-[120px] truncate">{user.name}</span>
                         </div>
                         
                         <div className="h-6 w-px bg-[#E2E8F0] hidden sm:block mx-1"></div>
